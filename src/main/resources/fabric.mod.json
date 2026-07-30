@@ -1,0 +1,35 @@
+{
+	"schemaVersion": 1,
+	"id": "ecology",
+	"version": "${version}",
+	"name": "Ecology",
+	"description": "Overhauls mobs with an ecology system and adds new creatures that fit into the food chain.",
+	"authors": [
+		"Midas"
+	],
+	"contact": {},
+	"license": "CC0-1.0",
+	"icon": "assets/ecology/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.midas.ecology.EcologyMod"
+		],
+		"client": [
+			"com.midas.ecology.client.EcologyClient"
+		]
+	},
+	"mixins": [
+		"ecology.mixins.json",
+		{
+			"config": "ecology.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
