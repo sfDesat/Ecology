@@ -1,0 +1,18 @@
+{
+  "type": "ecology:underwater_rock",
+  "config": {
+    "state": {
+      "Name": "minecraft:stone"
+    },
+    "radius": {
+      "type": "minecraft:uniform",
+      "min_inclusive": 2,
+      "max_inclusive": 4
+    },
+    "height": {
+      "type": "minecraft:uniform",
+      "min_inclusive": 6,
+      "max_inclusive": 9
+    }
+  }
+}

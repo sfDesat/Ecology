@@ -1,0 +1,12 @@
+{
+  "feature": "ecology:iceberg_packed",
+  "placement": [
+    {
+      "type": "minecraft:rarity_filter",
+      "chance": 8
+    },
+    {
+      "type": "minecraft:in_square"
+    }
+  ]
+}

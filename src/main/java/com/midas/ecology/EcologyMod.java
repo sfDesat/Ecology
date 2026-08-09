@@ -1,5 +1,7 @@
 package com.midas.ecology;
 
+import com.midas.ecology.worldgen.EcologyBiomes;
+import com.midas.ecology.worldgen.feature.EcologyFeatures;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
@@ -11,7 +13,8 @@ public class EcologyMod implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		LOGGER.info("Ecology initialized");
+		EcologyFeatures.register();
+		LOGGER.info("Ecology initialized ({} ocean habitat pockets)", EcologyBiomes.ALL.size());
 	}
 
 	public static Identifier id(String path) {

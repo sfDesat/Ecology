@@ -1,0 +1,24 @@
+{
+  "feature": "ecology:rocky_reef_rock_large",
+  "placement": [
+    {
+      "type": "minecraft:rarity_filter",
+      "chance": 5
+    },
+    {
+      "type": "minecraft:in_square"
+    },
+    {
+      "type": "minecraft:heightmap",
+      "heightmap": "OCEAN_FLOOR_WG"
+    },
+    {
+      "type": "minecraft:surface_relative_threshold_filter",
+      "heightmap": "WORLD_SURFACE_WG",
+      "max_inclusive": -5
+    },
+    {
+      "type": "minecraft:biome"
+    }
+  ]
+}

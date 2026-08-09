@@ -1,0 +1,21 @@
+{
+	"replace": false,
+	"values": [
+		"ecology:ice_edge",
+		"ecology:polynya",
+		"ecology:sympagic_zone",
+		"ecology:kelp_forest",
+		"ecology:cold_eelgrass",
+		"ecology:seagrass_meadow",
+		"ecology:sand_wave_field",
+		"ecology:temperate_rocky_reef",
+		"ecology:subtropical_seagrass",
+		"ecology:patch_reef",
+		"ecology:soft_coral_garden",
+		"ecology:coral_reef",
+		"ecology:lagoon",
+		"ecology:tropical_seagrass",
+		"ecology:open_ocean",
+		"ecology:deep_ocean"
+	]
+}

@@ -1,0 +1,13 @@
+{
+	"replace": false,
+	"values": [
+		"ecology:ice_edge",
+		"ecology:polynya",
+		"ecology:sympagic_zone",
+		"ecology:kelp_forest",
+		"ecology:cold_eelgrass",
+		"ecology:seagrass_meadow",
+		"ecology:sand_wave_field",
+		"ecology:temperate_rocky_reef"
+	]
+}

@@ -1,0 +1,8 @@
+{
+  "feature": "ecology:pack_ice_freeze",
+  "placement": [
+    {
+      "type": "minecraft:biome"
+    }
+  ]
+}
