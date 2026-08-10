@@ -12,6 +12,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -21,9 +22,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * {@link MultiNoiseBiomeSource}). For Ecology overworld multi-noise sources that
  * already contain {@link EcologyBiomes#DEEP_BASIN}, also expose
  * {@link EcologyBiomes#OPEN_OCEAN} so 3D pelagic remapping can return a real Holder.
+ * <p>
+ * Expanded membership is cached per source keyed by the identity of the base set
+ * so repeated calls stay O(1) without changing which biomes are advertised.
  */
 @Mixin(BiomeSource.class)
 public abstract class BiomeSourceMixin {
+	@Unique
+	private Set<Holder<Biome>> ecology$pelagicMembershipBase;
+
+	@Unique
+	private Set<Holder<Biome>> ecology$pelagicMembershipExpanded;
+
 	@Inject(method = "possibleBiomes", at = @At("RETURN"), cancellable = true)
 	@SuppressWarnings("unchecked")
 	private void ecology$includePelagicMembership(CallbackInfoReturnable<Set<Holder<Biome>>> cir) {
@@ -32,6 +42,15 @@ public abstract class BiomeSourceMixin {
 		}
 
 		Set<Holder<Biome>> biomes = cir.getReturnValue();
+		if (biomes == null) {
+			return;
+		}
+
+		if (this.ecology$pelagicMembershipExpanded != null && this.ecology$pelagicMembershipBase == biomes) {
+			cir.setReturnValue(this.ecology$pelagicMembershipExpanded);
+			return;
+		}
+
 		boolean hasDeepBasin = false;
 		boolean hasOpenOcean = false;
 		Holder.Reference<Biome> sampleRef = null;
@@ -49,6 +68,8 @@ public abstract class BiomeSourceMixin {
 		}
 
 		if (!hasDeepBasin || hasOpenOcean || sampleRef == null) {
+			this.ecology$pelagicMembershipBase = biomes;
+			this.ecology$pelagicMembershipExpanded = biomes;
 			return;
 		}
 
@@ -68,8 +89,11 @@ public abstract class BiomeSourceMixin {
 			}
 		}
 
+		Set<Holder<Biome>> result = changed ? Set.copyOf(expanded) : biomes;
+		this.ecology$pelagicMembershipBase = biomes;
+		this.ecology$pelagicMembershipExpanded = result;
 		if (changed) {
-			cir.setReturnValue(Set.copyOf(expanded));
+			cir.setReturnValue(result);
 		}
 	}
 }

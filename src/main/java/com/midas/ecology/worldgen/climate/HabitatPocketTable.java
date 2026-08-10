@@ -137,8 +137,10 @@ public final class HabitatPocketTable {
 		if (max <= SHELF_EDGE) {
 			return continentalness;
 		}
+		// Fully shoreward of the shelf edge: keep a single edge sample so deep
+		// markers still abut HabitatPocketTable shallow bands without a zero-width span.
 		if (min >= SHELF_EDGE) {
-			return Climate.Parameter.span(SHELF_EDGE, SHELF_EDGE);
+			return Climate.Parameter.point(SHELF_EDGE);
 		}
 		return Climate.Parameter.span(min, SHELF_EDGE);
 	}

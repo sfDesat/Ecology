@@ -52,7 +52,7 @@ public final class EcologyClientConfig {
 	/**
 	 * FOG_REMAP: blocks from camera where underwater fog is full (when not using render-distance %).
 	 */
-	public float underwaterSightEnd = 100.0F;
+	public float underwaterSightEnd = 128.0F;
 	/**
 	 * FOG_REMAP: when true, sight end is {@link #underwaterSightEndPercent} of fog render distance
 	 * instead of {@link #underwaterSightEnd} blocks.
@@ -188,7 +188,7 @@ public final class EcologyClientConfig {
 		boolean hasSight = diskJson != null && diskJson.contains("\"underwaterSightEnd\"");
 		if (!hasSight && this.underwaterSightEnd <= 0.0F) {
 			this.underwaterSightStart = 16.0F;
-			this.underwaterSightEnd = 100.0F;
+			this.underwaterSightEnd = 128.0F;
 		}
 	}
 

@@ -4,6 +4,7 @@ import com.midas.ecology.worldgen.EcologyBiomes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
@@ -21,6 +22,11 @@ public final class EcologySpawnRules {
 	public static final int SCHOOLING_FISH_MAX_CLUSTER = 32;
 
 	private EcologySpawnRules() {
+	}
+
+	/** Ocean / deep-ocean biomes where megaschools are intentional (not rivers/lakes). */
+	public static boolean isOceanSchoolBiome(Holder<Biome> biome) {
+		return biome.is(BiomeTags.IS_OCEAN) || biome.is(BiomeTags.IS_DEEP_OCEAN);
 	}
 
 	public static boolean isTurtleGrazingBiome(Holder<Biome> biome) {

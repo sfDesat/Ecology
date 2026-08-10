@@ -1,6 +1,7 @@
 package com.midas.ecology.mixin;
 
 import com.midas.ecology.worldgen.surface.ColumnIceSystem;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -11,12 +12,15 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Dispatches {@link ColumnIceSystem} once per chunk after biome decoration.
+ * Dispatches {@link ColumnIceSystem} once per overworld chunk after biome decoration.
  */
 @Mixin(ChunkGenerator.class)
 public abstract class ChunkGeneratorMixin {
 	@Inject(method = "applyBiomeDecoration", at = @At("TAIL"))
 	private void ecology$applyColumnIce(WorldGenLevel level, ChunkAccess chunk, StructureManager structureManager, CallbackInfo ci) {
+		if (!level.getLevel().dimension().equals(Level.OVERWORLD)) {
+			return;
+		}
 		ColumnIceSystem.applyToChunk(level, chunk.getPos());
 	}
 }

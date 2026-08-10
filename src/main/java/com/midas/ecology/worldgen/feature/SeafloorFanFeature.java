@@ -5,7 +5,6 @@ import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
@@ -21,10 +20,6 @@ public class SeafloorFanFeature extends Feature<NoneFeatureConfiguration> {
 	@Override
 	public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
 		return placeFan(context.level(), context.origin(), context.random());
-	}
-
-	static Block randomFan(RandomSource random) {
-		return SeafloorHelpers.randomCoralFan(random);
 	}
 
 	static boolean placeFan(WorldGenLevel level, BlockPos origin, RandomSource random) {

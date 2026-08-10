@@ -50,7 +50,7 @@ Ecology offers two **mutually exclusive** fixes (`core/terrain` + Fog UBO extens
 - Effects apply only when the camera is **above water** (underwater fog stays vanilla)
 - Runtime settings overlay: `config/ecology/distant_water_pack/` (written only when settings change)
 - **Sodium** may ignore vanilla `core/terrain` overrides; Iris packs auto-disable unless `irisAutoDisable` is off
-- Check the log for `[Ecology WaterSurface]` lines if the effect is missing (enable `debugLogging`)
+- Check the log for `[Ecology DistantWater]` lines if the effect is missing (enable `debugLogging`)
 
 ## Design notes
 

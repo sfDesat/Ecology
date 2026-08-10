@@ -45,34 +45,12 @@ public class FluidRendererMixin {
 		ECOLOGY_FLUID.remove();
 	}
 
+	/** Applies to every {@code ARGB.scaleRGB} in {@code tesselate} (no ordinal — survives call reorders). */
 	@ModifyArg(
 		method = "tesselate",
-		at = @At(value = "INVOKE", target = "Lnet/minecraft/util/ARGB;scaleRGB(IF)I", ordinal = 0),
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/util/ARGB;scaleRGB(IF)I"),
 		index = 0
 	)
-	private int ecology$markWaterFaceTint0(int tintColor) {
-		return ecology$markWaterFaceTint(tintColor);
-	}
-
-	@ModifyArg(
-		method = "tesselate",
-		at = @At(value = "INVOKE", target = "Lnet/minecraft/util/ARGB;scaleRGB(IF)I", ordinal = 1),
-		index = 0
-	)
-	private int ecology$markWaterFaceTint1(int tintColor) {
-		return ecology$markWaterFaceTint(tintColor);
-	}
-
-	@ModifyArg(
-		method = "tesselate",
-		at = @At(value = "INVOKE", target = "Lnet/minecraft/util/ARGB;scaleRGB(IF)I", ordinal = 2),
-		index = 0
-	)
-	private int ecology$markWaterFaceTint2(int tintColor) {
-		return ecology$markWaterFaceTint(tintColor);
-	}
-
-	@Unique
 	private int ecology$markWaterFaceTint(int tintColor) {
 		FluidState state = ECOLOGY_FLUID.get();
 		if (state != null && state.is(FluidTags.WATER)) {

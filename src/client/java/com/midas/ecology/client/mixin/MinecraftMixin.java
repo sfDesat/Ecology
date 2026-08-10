@@ -1,6 +1,6 @@
 package com.midas.ecology.client.mixin;
 
-import com.midas.ecology.client.render.WaterSurfaceShaderSupport;
+import com.midas.ecology.client.render.DistantWaterShaderSupport;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.repository.RepositorySource;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,9 +19,9 @@ public class MinecraftMixin {
 		),
 		index = 0
 	)
-	private RepositorySource[] ecology$addWaterSurfacePackSource(RepositorySource[] sources) {
+	private RepositorySource[] ecology$addDistantWaterPackSource(RepositorySource[] sources) {
 		RepositorySource[] expanded = Arrays.copyOf(sources, sources.length + 1);
-		expanded[sources.length] = WaterSurfaceShaderSupport.repositorySource();
+		expanded[sources.length] = DistantWaterShaderSupport.repositorySource();
 		return expanded;
 	}
 }

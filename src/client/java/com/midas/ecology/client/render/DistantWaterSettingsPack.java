@@ -24,14 +24,14 @@ import java.util.function.Consumer;
  * Runtime overlay pack that only contains {@code distant_water_settings.glsl}
  * so config can change without shipping a second copy of {@code core/terrain}.
  */
-public final class WaterSurfaceSettingsPack {
+public final class DistantWaterSettingsPack {
 	public static final String PACK_ID = "ecology/distant_water_settings";
 	/** Minecraft 26.2 client resource pack format. Bump when porting. */
 	public static final int PACK_FORMAT_MAJOR = 88;
 
 	private static final Path PACK_ROOT = FabricLoader.getInstance().getConfigDir().resolve("ecology/distant_water_pack");
 
-	private WaterSurfaceSettingsPack() {
+	private DistantWaterSettingsPack() {
 	}
 
 	public static Path packRoot() {
@@ -43,15 +43,15 @@ public final class WaterSurfaceSettingsPack {
 	}
 
 	public static RepositorySource repositorySource() {
-		return WaterSurfaceSettingsPack::loadPack;
+		return DistantWaterSettingsPack::loadPack;
 	}
 
 	private static void loadPack(Consumer<Pack> onLoad) {
 		EcologyClientConfig.ensureLoaded();
-		WaterSurfaceShaderSupport.syncFromConfig(false);
+		DistantWaterShaderSupport.syncFromConfig(false);
 		PackLocationInfo location = new PackLocationInfo(
 			PACK_ID,
-			Component.literal("Ecology Water Surface Settings"),
+			Component.literal("Ecology Distant Water Settings"),
 			PackSource.BUILT_IN,
 			Optional.empty()
 		);
@@ -65,7 +65,7 @@ public final class WaterSurfaceSettingsPack {
 		if (pack != null) {
 			onLoad.accept(pack);
 		} else {
-			EcologyMod.LOGGER.error("[Ecology WaterSurface] Failed to load settings pack from {} (pack.mcmeta invalid?)", PACK_ROOT);
+			EcologyMod.LOGGER.error("[Ecology DistantWater] Failed to load settings pack from {} (pack.mcmeta invalid?)", PACK_ROOT);
 		}
 	}
 
@@ -105,7 +105,7 @@ public final class WaterSurfaceSettingsPack {
 				StandardCharsets.UTF_8
 			);
 		} catch (IOException e) {
-			EcologyMod.LOGGER.error("[Ecology WaterSurface] Failed to write settings pack", e);
+			EcologyMod.LOGGER.error("[Ecology DistantWater] Failed to write settings pack", e);
 			EcologyClientConfig.notifyPlayer("Ecology: failed to write shader settings pack (see log)");
 		}
 	}
@@ -114,7 +114,7 @@ public final class WaterSurfaceSettingsPack {
 		return """
 			{
 			  "pack": {
-			    "description": "Ecology water surface settings overlay",
+			    "description": "Ecology Distant Water Settings overlay",
 			    "min_format": [%d, 0],
 			    "max_format": [%d, 0]
 			  }

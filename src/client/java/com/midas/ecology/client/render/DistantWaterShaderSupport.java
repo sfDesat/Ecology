@@ -17,10 +17,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Syncs distant-water settings into {@link WaterSurfaceSettingsPack} and
+ * Syncs distant-water settings into {@link DistantWaterSettingsPack} and
  * reloads resources only when the effective signature changes (e.g. Iris pack toggle).
  */
-public final class WaterSurfaceShaderSupport {
+public final class DistantWaterShaderSupport {
 	private static final Identifier SETTINGS_ID = Identifier.fromNamespaceAndPath("ecology", "shaders/include/distant_water_settings.glsl");
 	private static final Identifier TERRAIN_FSH = Identifier.fromNamespaceAndPath("minecraft", "shaders/core/terrain.fsh");
 	private static final Identifier TRANSPARENCY_FSH = Identifier.fromNamespaceAndPath("minecraft", "shaders/post/transparency.fsh");
@@ -31,7 +31,7 @@ public final class WaterSurfaceShaderSupport {
 	private static int tickCounter;
 	private static boolean loggedResourceCheck;
 
-	private WaterSurfaceShaderSupport() {
+	private DistantWaterShaderSupport() {
 	}
 
 	/** Write settings without forcing a resource reload (startup / pack registration). */
@@ -133,7 +133,7 @@ public final class WaterSurfaceShaderSupport {
 			return false;
 		}
 
-		WaterSurfaceSettingsPack.writeSettings(
+		DistantWaterSettingsPack.writeSettings(
 			mode, distance, strength, start, end,
 			fresnel, fresnelStrength, fresnelPower, fogRemapBias,
 			underwaterSightStart, underwaterSightEnd,
@@ -168,10 +168,10 @@ public final class WaterSurfaceShaderSupport {
 			RELOAD_SCHEDULED.set(false);
 			loggedResourceCheck = false;
 			if (error != null) {
-				EcologyMod.LOGGER.error("[Ecology WaterSurface] Resource reload failed ({})", reason, error);
+				EcologyMod.LOGGER.error("[Ecology DistantWater] Resource reload failed ({})", reason, error);
 				return;
 			}
-			EcologyMod.LOGGER.info("[Ecology WaterSurface] Reloaded resources ({})", reason);
+			EcologyMod.LOGGER.info("[Ecology DistantWater] Reloaded resources ({})", reason);
 			logDiagnostics("afterReload");
 		}));
 	}
@@ -200,7 +200,7 @@ public final class WaterSurfaceShaderSupport {
 			+ " dbgFresnel=" + config.debugHighlightFresnel
 			+ " dbgFogRemap=" + config.debugHighlightFogRemap
 			+ " dbgAll=" + config.debugHighlightAllTranslucent
-			+ " packDir=" + Files.isDirectory(WaterSurfaceSettingsPack.packRoot());
+			+ " packDir=" + Files.isDirectory(DistantWaterSettingsPack.packRoot());
 	}
 
 	public static void logDiagnostics(String reason) {
@@ -208,29 +208,29 @@ public final class WaterSurfaceShaderSupport {
 		if (!config.debugLogging) {
 			return;
 		}
-		EcologyMod.LOGGER.info("[Ecology WaterSurface] {} -> {}", reason, statusSummary());
-		EcologyMod.LOGGER.info("[Ecology WaterSurface] config file: {}", EcologyClientConfig.path().toAbsolutePath());
-		EcologyMod.LOGGER.info("[Ecology WaterSurface] settings pack root: {}", WaterSurfaceSettingsPack.packRoot().toAbsolutePath());
+		EcologyMod.LOGGER.info("[Ecology DistantWater] {} -> {}", reason, statusSummary());
+		EcologyMod.LOGGER.info("[Ecology DistantWater] config file: {}", EcologyClientConfig.path().toAbsolutePath());
+		EcologyMod.LOGGER.info("[Ecology DistantWater] settings pack root: {}", DistantWaterSettingsPack.packRoot().toAbsolutePath());
 		try {
-			if (Files.isRegularFile(WaterSurfaceSettingsPack.settingsFile())) {
-				EcologyMod.LOGGER.info("[Ecology WaterSurface] generated settings:\n{}", Files.readString(WaterSurfaceSettingsPack.settingsFile()));
+			if (Files.isRegularFile(DistantWaterSettingsPack.settingsFile())) {
+				EcologyMod.LOGGER.info("[Ecology DistantWater] generated settings:\n{}", Files.readString(DistantWaterSettingsPack.settingsFile()));
 			} else {
-				EcologyMod.LOGGER.warn("[Ecology WaterSurface] missing generated settings file");
+				EcologyMod.LOGGER.warn("[Ecology DistantWater] missing generated settings file");
 			}
 		} catch (IOException e) {
-			EcologyMod.LOGGER.warn("[Ecology WaterSurface] could not read generated settings", e);
+			EcologyMod.LOGGER.warn("[Ecology DistantWater] could not read generated settings", e);
 		}
 
 		Minecraft client = Minecraft.getInstance();
 		if (client == null || client.getResourceManager() == null) {
-			EcologyMod.LOGGER.info("[Ecology WaterSurface] resource manager not ready yet");
+			EcologyMod.LOGGER.info("[Ecology DistantWater] resource manager not ready yet");
 			return;
 		}
 		Optional<Resource> settings = client.getResourceManager().getResource(SETTINGS_ID);
 		Optional<Resource> terrain = client.getResourceManager().getResource(TERRAIN_FSH);
 		Optional<Resource> transparency = client.getResourceManager().getResource(TRANSPARENCY_FSH);
 		boolean fabulous = client.gameRenderer != null && client.gameRenderer.gameRenderState().useShaderTransparency();
-		EcologyMod.LOGGER.info("[Ecology WaterSurface] resource present settings.glsl={} terrain.fsh={} transparency.fsh={} fabulous={} settingsSource={}",
+		EcologyMod.LOGGER.info("[Ecology DistantWater] resource present settings.glsl={} terrain.fsh={} transparency.fsh={} fabulous={} settingsSource={}",
 			settings.isPresent(),
 			terrain.isPresent(),
 			transparency.isPresent(),
@@ -246,42 +246,42 @@ public final class WaterSurfaceShaderSupport {
 			try (var in = resource.open()) {
 				String text = new String(in.readAllBytes(), StandardCharsets.UTF_8);
 				boolean ours = text.contains("EcologyDistantWaterMode") || text.contains("ecologyWaterFace");
-				EcologyMod.LOGGER.info("[Ecology WaterSurface] terrain.fsh from pack '{}' looks like Ecology override={}", resource.sourcePackId(), ours);
+				EcologyMod.LOGGER.info("[Ecology DistantWater] terrain.fsh from pack '{}' looks like Ecology override={}", resource.sourcePackId(), ours);
 				if (!ours) {
-					EcologyMod.LOGGER.warn("[Ecology WaterSurface] terrain.fsh is NOT Ecology's — another pack/Sodium may be winning");
+					EcologyMod.LOGGER.warn("[Ecology DistantWater] terrain.fsh is NOT Ecology's — another pack/Sodium may be winning");
 				}
 			} catch (Exception e) {
-				EcologyMod.LOGGER.warn("[Ecology WaterSurface] could not read terrain.fsh contents", e);
+				EcologyMod.LOGGER.warn("[Ecology DistantWater] could not read terrain.fsh contents", e);
 			}
 		});
 		transparency.ifPresent(resource -> {
 			try (var in = resource.open()) {
 				String text = new String(in.readAllBytes(), StandardCharsets.UTF_8);
 				boolean ours = text.contains("EcologyUnderwaterSightEnd") || text.contains("ecologyDecodeWaterMask");
-				EcologyMod.LOGGER.info("[Ecology WaterSurface] transparency.fsh from pack '{}' looks like Ecology override={}", resource.sourcePackId(), ours);
+				EcologyMod.LOGGER.info("[Ecology DistantWater] transparency.fsh from pack '{}' looks like Ecology override={}", resource.sourcePackId(), ours);
 				if (!ours) {
-					EcologyMod.LOGGER.warn("[Ecology WaterSurface] transparency.fsh is NOT Ecology's — fog tint will not run");
+					EcologyMod.LOGGER.warn("[Ecology DistantWater] transparency.fsh is NOT Ecology's — fog tint will not run");
 				}
 			} catch (Exception e) {
-				EcologyMod.LOGGER.warn("[Ecology WaterSurface] could not read transparency.fsh contents", e);
+				EcologyMod.LOGGER.warn("[Ecology DistantWater] could not read transparency.fsh contents", e);
 			}
 		});
 		if (!fabulous && config.distantWaterMode == DistantWaterMode.FOG_REMAP) {
-			EcologyMod.LOGGER.warn("[Ecology WaterSurface] Fog tint needs Improved Transparency (Fabulous). Current graphics will not run the transparency composite.");
+			EcologyMod.LOGGER.warn("[Ecology DistantWater] Fog tint needs Improved Transparency (Fabulous). Current graphics will not run the transparency composite.");
 		}
 		if (client.getResourcePackRepository() != null) {
-			boolean selected = client.getResourcePackRepository().getSelectedIds().contains(WaterSurfaceSettingsPack.PACK_ID);
-			boolean available = client.getResourcePackRepository().getAvailableIds().contains(WaterSurfaceSettingsPack.PACK_ID);
-			EcologyMod.LOGGER.info("[Ecology WaterSurface] pack available={} selected={}", available, selected);
+			boolean selected = client.getResourcePackRepository().getSelectedIds().contains(DistantWaterSettingsPack.PACK_ID);
+			boolean available = client.getResourcePackRepository().getAvailableIds().contains(DistantWaterSettingsPack.PACK_ID);
+			EcologyMod.LOGGER.info("[Ecology DistantWater] pack available={} selected={}", available, selected);
 			if (!available) {
-				EcologyMod.LOGGER.warn("[Ecology WaterSurface] settings pack is NOT in the repository — MinecraftMixin pack source may have failed");
+				EcologyMod.LOGGER.warn("[Ecology DistantWater] settings pack is NOT in the repository — MinecraftMixin pack source may have failed");
 			} else if (!selected) {
-				EcologyMod.LOGGER.warn("[Ecology WaterSurface] settings pack exists but is not selected");
+				EcologyMod.LOGGER.warn("[Ecology DistantWater] settings pack exists but is not selected");
 			}
 		}
 	}
 
 	public static RepositorySource repositorySource() {
-		return WaterSurfaceSettingsPack.repositorySource();
+		return DistantWaterSettingsPack.repositorySource();
 	}
 }

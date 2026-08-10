@@ -85,7 +85,7 @@ Config modes:
 
 ## Related code (as of this note)
 
-- Mode + settings: `DistantWaterMode`, `EcologyClientConfig`, `WaterSurfaceSettingsPack`, Mod Menu screen
+- Mode + settings: `DistantWaterMode`, `EcologyClientConfig`, `DistantWaterSettingsPack`, Mod Menu screen
 - Water-face marker: `FluidRendererMixin` (alpha 253), `assets/minecraft/shaders/core/terrain.{vsh,fsh}`
 - Fog tint module: `com.midas.ecology.client.render.fog` (`FogTint`, `FogTintMatrices`)
 - Water fog color + underwater flag: `fog.glsl` (`EcologyWaterFogColor`, `EcologyCameraUnderwater`), `FogRendererMixin`

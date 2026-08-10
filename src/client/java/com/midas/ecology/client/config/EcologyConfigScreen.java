@@ -1,7 +1,7 @@
 package com.midas.ecology.client.config;
 
 import com.midas.ecology.EcologyMod;
-import com.midas.ecology.client.render.WaterSurfaceShaderSupport;
+import com.midas.ecology.client.render.DistantWaterShaderSupport;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
@@ -19,9 +19,9 @@ public final class EcologyConfigScreen {
 			.setTitle(Component.literal("Ecology Client Config"))
 			.setSavingRunnable(() -> {
 				EcologyClientConfig.save();
-				WaterSurfaceShaderSupport.applyConfigAndReload();
-				EcologyClientConfig.notifyPlayer("Ecology config saved. " + WaterSurfaceShaderSupport.statusSummary());
-				EcologyMod.LOGGER.info("Ecology config saved via Cloth: {}", WaterSurfaceShaderSupport.statusSummary());
+				DistantWaterShaderSupport.applyConfigAndReload();
+				EcologyClientConfig.notifyPlayer("Ecology config saved. " + DistantWaterShaderSupport.statusSummary());
+				EcologyMod.LOGGER.info("Ecology config saved via Cloth: {}", DistantWaterShaderSupport.statusSummary());
 			});
 
 		ConfigEntryBuilder entries = builder.entryBuilder();
@@ -70,7 +70,7 @@ public final class EcologyConfigScreen {
 			.setSaveConsumer(value -> config.underwaterSightEndUseRenderDistancePercent = value)
 			.build());
 		fog.addEntry(entries.startIntField(Component.literal("Underwater sight end (blocks)"), Math.round(config.underwaterSightEnd))
-			.setDefaultValue(100)
+			.setDefaultValue(128)
 			.setMin(1)
 			.setMax(256)
 			.setTooltip(Component.literal("Used when “% of render distance” is off. Effective end is always at least start + 1."))

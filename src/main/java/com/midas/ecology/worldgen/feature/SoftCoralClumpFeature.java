@@ -63,8 +63,8 @@ public class SoftCoralClumpFeature extends Feature<SoftCoralClumpConfiguration> 
 			if (localFloorY == Integer.MIN_VALUE) {
 				continue;
 			}
-			cursor.set(floor.getX() + dx, localFloorY, floor.getZ() + dz);
-			if (SeafloorFanFeature.placeFan(level, cursor.immutable(), random)) {
+			cursor.set(floor.getX() + dx, localFloorY + 1, floor.getZ() + dz);
+			if (SeafloorHelpers.tryPlaceFan(level, cursor, random)) {
 				placed = true;
 			}
 		}
@@ -119,7 +119,7 @@ public class SoftCoralClumpFeature extends Feature<SoftCoralClumpConfiguration> 
 		if (placed) {
 			cursor.set(floor.getX() + dx, localFloorY + height, floor.getZ() + dz);
 			if (random.nextBoolean()) {
-				placeWaterlogged(level, cursor, SeafloorHelpers.randomHardCoralPlant(random), random);
+				placeWaterlogged(level, cursor, SeafloorHelpers.randomHardCoralPlant(random));
 			} else {
 				SeafloorHelpers.tryPlaceFan(level, cursor, random);
 			}
@@ -141,10 +141,10 @@ public class SoftCoralClumpFeature extends Feature<SoftCoralClumpConfiguration> 
 			return false;
 		}
 		BlockPos above = new BlockPos(floor.getX() + dx, localFloorY + 1, floor.getZ() + dz);
-		return placeWaterlogged(level, above, SeafloorHelpers.randomHardCoralPlant(random), random);
+		return placeWaterlogged(level, above, SeafloorHelpers.randomHardCoralPlant(random));
 	}
 
-	private static boolean placeWaterlogged(WorldGenLevel level, BlockPos pos, Block block, RandomSource random) {
+	private static boolean placeWaterlogged(WorldGenLevel level, BlockPos pos, Block block) {
 		if (!level.getFluidState(pos).is(Fluids.WATER) || !level.getBlockState(pos).canBeReplaced()) {
 			return false;
 		}
