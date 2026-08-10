@@ -7,8 +7,8 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.Biome;
 
 /**
- * Registry keys for Ecology habitat pocket biomes.
- * Content is datapack JSON cloned from the parent shallow ocean for spawn testing.
+ * Registry keys for Ecology ocean biomes (habitat pockets + pelagic layers).
+ * Content is datapack JSON.
  */
 public final class EcologyBiomes {
 	private EcologyBiomes() {
@@ -40,7 +40,26 @@ public final class EcologyBiomes {
 
 	// pelagic layers (3D stack)
 	public static final ResourceKey<Biome> OPEN_OCEAN = key("open_ocean");
-	public static final ResourceKey<Biome> DEEP_OCEAN = key("deep_ocean");
+	/** Deep basin floor / lower column — also the horizontal marker remapped by Y. */
+	public static final ResourceKey<Biome> DEEP_BASIN = key("deep_basin");
+
+	/** Habitat pockets only (excludes pelagic layers). */
+	public static final List<ResourceKey<Biome>> POCKETS = List.of(
+		ICE_EDGE,
+		POLYNYA,
+		SYMPAGIC_ZONE,
+		KELP_FOREST,
+		COLD_EELGRASS,
+		SEAGRASS_MEADOW,
+		SAND_WAVE_FIELD,
+		TEMPERATE_ROCKY_REEF,
+		SUBTROPICAL_SEAGRASS,
+		PATCH_REEF,
+		SOFT_CORAL_GARDEN,
+		CORAL_REEF,
+		LAGOON,
+		TROPICAL_SEAGRASS
+	);
 
 	public static final List<ResourceKey<Biome>> ALL = List.of(
 		ICE_EDGE,
@@ -58,7 +77,7 @@ public final class EcologyBiomes {
 		LAGOON,
 		TROPICAL_SEAGRASS,
 		OPEN_OCEAN,
-		DEEP_OCEAN
+		DEEP_BASIN
 	);
 
 	private static ResourceKey<Biome> key(String path) {

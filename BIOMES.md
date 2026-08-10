@@ -35,7 +35,7 @@ Shallow oceans are generic climate bases with deliberately plain fauna. Rare hab
 
 **Open Ocean** — in progress
 
-**Deep Ocean** — in progress
+**Deep Basin** — in progress
 
 ## Biomes
 
@@ -49,7 +49,7 @@ Shallow oceans are generic climate bases with deliberately plain fauna. Rare hab
 
 Polar base ocean. Temperature: frozen (0.0). Depth: about 0–20 below sea level (Y 63–43).
 
-The coldest shallow ocean — a plain polar shelf meant to feel empty until you find an ice habitat pocket. Pack ice at ~85–90% via custom `PackIceFreezeFeature` (applied once per chunk, not biome-filtered — avoids square cutoffs), with occasional clustered water holes, dense ecology icebergs, dark cold water fog (#061828), gravel and rock under ice. Plants absent.
+The coldest shallow ocean — a plain polar shelf meant to feel empty until you find an ice habitat pocket. Pack ice at ~85–90% via `ColumnIceSystem` (applied once per chunk, not biome-filtered — avoids square cutoffs), with occasional clustered water holes, dense ecology icebergs, dark cold water fog (#061828), gravel and rock under ice. Plants absent.
 
 Animals: Arctic amphipods, brittle stars, ringed seals.
 
@@ -73,7 +73,7 @@ Animals: Copepods, black guillemots, bowhead whales, narwhals, orcas.
 
 Habitat pocket inside Frozen Ocean. Temperature: frozen (0.0). Depth: about 0–5 below sea level (Y 63–58); hugs the ice underside.
 
-The thin living layer under sea ice, driven by ice algae and amphipods that graze it. Same ~85–90% pack ice as Frozen Ocean (`ecology:pack_ice_freeze`), darker under-ice fog (#051420), gravel/rock floor with sparse sea fans and sea pickles as the under-ice epifauna stand-in — no seagrass carpet. Spawns as weirdness blobs on the frozen shelf.
+The thin living layer under sea ice, driven by ice algae and amphipods that graze it. Same ~85–90% pack ice as Frozen Ocean (`ColumnIceSystem`), darker under-ice fog (#051420), gravel/rock floor with sparse sea fans and sea pickles as the under-ice epifauna stand-in — no seagrass carpet. Spawns as weirdness blobs on the frozen shelf.
 
 Animals: Ice algae, Arctic amphipods, bearded seals at breathing holes.
 
@@ -221,15 +221,15 @@ Animals: Blue tangs, queen conchs.
 
 Upper pelagic layer. Temperature: temperate (0.5). Depth: surface down to about Y 15 (roughly 0–48 below sea level).
 
-The open blue upper water column — no seafloor habitat of its own, just pelagic space. Featureless blue water, bright near the surface, fading with depth.
+The open blue upper water column — no seafloor habitat of its own, just pelagic space. Featureless blue water (`water_color` `#428ad4`), bright near the surface, fading with depth.
 
 Animals: Flying fish, sardine and mackerel schools, bioluminescent plankton at night, tuna, common dolphins, occasional whale sharks, transient orcas.
 
-#### Deep Ocean
+#### Deep Basin
 
-Lower pelagic / deep basin floor. Temperature: temperate (0.5). Depth: from about Y 12–15 down to the seafloor (48+ below sea level into deep basins).
+Lower pelagic / deep basin floor (`ecology:deep_basin`). Temperature: temperate (0.5). Depth: from about Y 12–15 down to the seafloor (48+ below sea level into deep basins).
 
-The dark lower water and deep basin floor under open ocean — one shared deep biome instead of climate-split vanilla deeps. Dark blue fog (#040812), near-black water (#080c18), dim gravel and rock floor.
+The dark lower water and deep basin floor under open ocean — one shared deep biome instead of climate-split vanilla deeps. Also used as the horizontal MultiNoise marker for deep columns (and the warm outer shelf) before vertical remapping. Dark navy fog (#061a28), near-black water (#080c18), dim gravel and rock floor with full cave / canyon carving.
 
 Animals: Grenadiers (rattails), deep-sea hagfish, lanternfish, anglerfish, sixgill sharks, elephant seals as deep-diving visitors.
 
@@ -237,6 +237,29 @@ Animals: Grenadiers (rattails), deep-sea hagfish, lanternfish, anglerfish, sixgi
 
 Sea level is Y 63. Listed depths are targets, not hard clamps.
 
-Vanilla deep_* oceans are disabled and replaced by `ecology:deep_ocean`, with Open Ocean stacked above it in deep-basin columns (and on the outer warm-ocean shelf).
+Vanilla deep_* oceans are disabled and replaced by `ecology:deep_basin`, with Open Ocean stacked above it in deep-basin columns (and on the outer warm-ocean shelf).
 
 Cold Rocky Reef was removed — cold rocky habitat lives inside Kelp Forest’s deeper urchin-barren band instead.
+
+**Continental shelf** (see `HabitatPocketTable` + `DENSITY.md`): MultiNoise **continentalness** is more negative farther from land. Land/shore ≥ about `-0.19`. Ecology shallow oceans / habitat pockets occupy **`[-0.48, -0.19]`** (vanilla shallow stopped at `-0.455` — a modest offshore nudge). Deep Basin is more oceanic than `-0.48`. Within the shelf, nearshore pockets sit closer to `-0.19`; outer-shelf pockets (sand waves, soft coral, kelp mid-band, warm outer fill) use the more negative end. Seafloor depth is driven by `ecology:ocean_depth_control` on the same continent coordinate so bands stay aligned.
+
+**Water color** (`effects.water_color`, not fog) runs cold blue → warm turquoise in tight steps: Sympagic `#343eac` → Frozen `#384cbc` → Ice Edge `#3c56c4` → Polynya `#3e5ecc` → Cold `#406cd0` → Temperate / Open Ocean `#428ad4` → Soft Coral `#4496d8` → Lukewarm `#46a4dc` → Warm `#48b4e0` → Coral `#4ac0e4` → Tropical Seagrass `#4cc8e6` → Lagoon `#50d2ea`. Deep Basin water `#080c18`, water fog `#061a28`.
+
+**Carvers** (caves / ravines). Minecraft can bleed carving a short way across biome borders, so a meadow next to kelp or reef can still show a cut.
+
+| Biome | cave | cave_extra | canyon (ravine) |
+|--------|:----:|:----------:|:---------------:|
+| Deep Basin | yes | yes | yes |
+| Kelp Forest | yes | yes | yes |
+| Frozen Ocean | yes | — | yes |
+| Ocean (temperate) | yes | — | yes |
+| Temperate Rocky Reef | yes | — | yes |
+| Coral Reef | yes | — | yes |
+| Cold Ocean | yes | — | — |
+| Soft Coral Garden | yes | — | — |
+| Patch Reef | yes | — | — |
+| All other ecology oceans / pockets (incl. Cold Eelgrass) | — | — | — |
+
+Legacy `minecraft:deep_*` JSON still lists full carvers but those columns remap to Deep Basin / Open Ocean.
+
+**Amethyst geodes** stay on rocky / hard-bottom and deep biomes. Soft-sediment biomes (seagrasses, sand waves, lagoon, warm/lukewarm bases, soft coral garden) omit them.

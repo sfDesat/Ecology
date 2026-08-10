@@ -1,4 +1,4 @@
-package com.midas.ecology.worldgen;
+package com.midas.ecology.worldgen.structure;
 
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LevelHeightAccessor;
@@ -8,47 +8,49 @@ import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.structure.Structure;
 
 /**
- * Vanilla ocean monuments hardcode their bounding-box floor at Y 39 (near sea
- * level) and stretch prismarine pillars down to the seafloor. With Ecology's
- * deep basins that creates huge pillars and leaves the monument body in
- * {@link EcologyBiomes#OPEN_OCEAN}.
+ * Aligns structures that hardcode a near-sea-level floor (e.g. ocean monuments)
+ * to the sampled ocean floor. Call-scoped via {@link #runWithMinY(int, Runnable)}
+ * so pending state is always cleared.
  *
- * <p>Height is sampled once at the structure chunk's center
- * ({@link Heightmap.Types#OCEAN_FLOOR_WG}), then raised by
- * {@link #FLOOR_CLEARANCE} so the monument clears uneven seafloor. That value
- * is applied as the monument min Y while pieces are constructed so the outer
- * shell, rooms, and elder spawns stay aligned.
+ * <p>Vanilla ocean monuments hardcode their bounding-box floor at Y 39. With
+ * Ecology deep basins that creates huge pillars; this component samples
+ * {@link Heightmap.Types#OCEAN_FLOOR_WG} and supplies a replacement min Y while
+ * pieces are constructed.
  */
-public final class OceanMonumentSeafloor {
+public final class StructureFloorAligner {
 	/** Vanilla {@code MonumentBuilding} min Y. */
-	public static final int VANILLA_MIN_Y = 39;
+	public static final int VANILLA_MONUMENT_MIN_Y = 39;
 	/** Vanilla monument bounding-box height (Y span). */
-	public static final int HEIGHT = 23;
+	public static final int MONUMENT_HEIGHT = 23;
 	/** Sit this many blocks above the sampled ocean floor. */
 	public static final int FLOOR_CLEARANCE = 8;
 
 	private static final ThreadLocal<Integer> PENDING_MIN_Y = new ThreadLocal<>();
 
-	private OceanMonumentSeafloor() {
+	private StructureFloorAligner() {
 	}
 
-	public static void setPendingMinY(int minY) {
+	/**
+	 * Runs {@code action} with a pending min Y, always clearing afterward.
+	 */
+	public static void runWithMinY(int minY, Runnable action) {
 		PENDING_MIN_Y.set(minY);
+		try {
+			action.run();
+		} finally {
+			PENDING_MIN_Y.remove();
+		}
 	}
 
-	public static void clearPendingMinY() {
-		PENDING_MIN_Y.remove();
-	}
-
-	/** Replaces vanilla Y 39 when a seafloor placement is pending on this thread. */
+	/** Replaces vanilla min Y when a seafloor placement is pending on this thread. */
 	public static int resolveMinY(int vanillaMinY) {
 		Integer pending = PENDING_MIN_Y.get();
 		return pending != null ? pending : vanillaMinY;
 	}
 
-	public static int targetMinY(Structure.GenerationContext context) {
+	public static int monumentTargetMinY(Structure.GenerationContext context) {
 		ChunkPos chunkPos = context.chunkPos();
-		return targetMinY(
+		return monumentTargetMinY(
 			context.chunkGenerator(),
 			context.heightAccessor(),
 			context.randomState(),
@@ -57,7 +59,7 @@ public final class OceanMonumentSeafloor {
 		);
 	}
 
-	public static int targetMinY(
+	public static int monumentTargetMinY(
 		ChunkGenerator generator,
 		LevelHeightAccessor heightAccessor,
 		RandomState randomState,
@@ -72,8 +74,7 @@ public final class OceanMonumentSeafloor {
 			randomState
 		);
 		int seaLevel = generator.getSeaLevel();
-		// Keep the roof a few blocks below sea level if the floor is unusually high.
-		int maxMinY = seaLevel - HEIGHT - 2;
+		int maxMinY = seaLevel - MONUMENT_HEIGHT - 2;
 		int minMinY = heightAccessor.getMinY() + 1;
 		return Math.max(minMinY, Math.min(floorY + FLOOR_CLEARANCE, maxMinY));
 	}

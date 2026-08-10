@@ -3,7 +3,7 @@
 	"id": "ecology",
 	"version": "${version}",
 	"name": "Ecology",
-	"description": "Overhauls mobs with an ecology system and adds new creatures that fit into the food chain.",
+	"description": "Ocean habitat pockets, pelagic biome layers, and seafloor worldgen. Mob ecology planned later.",
 	"authors": [
 		"Midas"
 	],
@@ -20,11 +20,7 @@
 		]
 	},
 	"mixins": [
-		"ecology.mixins.json",
-		{
-			"config": "ecology.client.mixins.json",
-			"environment": "client"
-		}
+		"ecology.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.19.3",

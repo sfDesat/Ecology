@@ -1,5 +1,6 @@
 package com.midas.ecology.worldgen.feature;
 
+import com.midas.ecology.worldgen.seafloor.SeafloorHelpers;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -19,22 +20,6 @@ import net.minecraft.world.level.material.Fluids;
  * Isolated patch-reef island: sand halo + custom hard-coral heads, a few fans, sparse seagrass.
  */
 public class PatchReefIslandFeature extends Feature<PatchReefIslandConfiguration> {
-	private static final Block[] CORAL_BLOCKS = {
-		Blocks.TUBE_CORAL_BLOCK,
-		Blocks.BRAIN_CORAL_BLOCK,
-		Blocks.BUBBLE_CORAL_BLOCK,
-		Blocks.FIRE_CORAL_BLOCK,
-		Blocks.HORN_CORAL_BLOCK
-	};
-
-	private static final Block[] CORAL_PLANTS = {
-		Blocks.TUBE_CORAL,
-		Blocks.BRAIN_CORAL,
-		Blocks.BUBBLE_CORAL,
-		Blocks.FIRE_CORAL,
-		Blocks.HORN_CORAL
-	};
-
 	public PatchReefIslandFeature(Codec<PatchReefIslandConfiguration> codec) {
 		super(codec);
 	}
@@ -46,14 +31,7 @@ public class PatchReefIslandFeature extends Feature<PatchReefIslandConfiguration
 		PatchReefIslandConfiguration config = context.config();
 		BlockPos.MutableBlockPos floor = context.origin().mutable();
 
-		if (!isSeafloor(level.getBlockState(floor))) {
-			if (isSeafloor(level.getBlockState(floor.below()))) {
-				floor.move(0, -1, 0);
-			} else {
-				return false;
-			}
-		}
-		if (!level.getFluidState(floor.above()).is(Fluids.WATER)) {
+		if (!SeafloorHelpers.snapToSoftFloor(level, floor) || !SeafloorHelpers.hasWaterAbove(level, floor)) {
 			return false;
 		}
 
@@ -96,7 +74,7 @@ public class PatchReefIslandFeature extends Feature<PatchReefIslandConfiguration
 			return false;
 		}
 
-		Block coral = CORAL_BLOCKS[random.nextInt(CORAL_BLOCKS.length)];
+		Block coral = SeafloorHelpers.randomHardCoralBlock(random);
 		BlockState state = coral.defaultBlockState();
 		return switch (random.nextInt(4)) {
 			case 0 -> placeColumn(level, floor, state, random);
@@ -129,7 +107,7 @@ public class PatchReefIslandFeature extends Feature<PatchReefIslandConfiguration
 		boolean placed = setFloorCoral(level, floor, state);
 		Direction side = Direction.Plane.HORIZONTAL.getRandomDirection(random);
 		BlockPos sideFloor = floor.relative(side);
-		if (isSeafloor(level.getBlockState(sideFloor)) && level.getFluidState(sideFloor.above()).is(Fluids.WATER)) {
+		if (SeafloorHelpers.isSoftSeafloor(level.getBlockState(sideFloor)) && level.getFluidState(sideFloor.above()).is(Fluids.WATER)) {
 			level.setBlock(sideFloor, state, 3);
 			placed = true;
 			if (canPlaceInWater(level, sideFloor.above()) && random.nextBoolean()) {
@@ -185,7 +163,7 @@ public class PatchReefIslandFeature extends Feature<PatchReefIslandConfiguration
 				continue;
 			}
 			BlockPos side = floor.relative(dir);
-			if (isSeafloor(level.getBlockState(side)) && level.getFluidState(side.above()).is(Fluids.WATER)) {
+			if (SeafloorHelpers.isSoftSeafloor(level.getBlockState(side)) && level.getFluidState(side.above()).is(Fluids.WATER)) {
 				level.setBlock(side, state, 3);
 				placed = true;
 			}
@@ -231,16 +209,9 @@ public class PatchReefIslandFeature extends Feature<PatchReefIslandConfiguration
 				}
 
 				cursor.set(floor.getX() + dx, topCoralY + 1, floor.getZ() + dz);
-				if (!canPlaceInWater(level, cursor)) {
-					continue;
+				if (SeafloorHelpers.tryPlaceFan(level, cursor, random)) {
+					placedFans++;
 				}
-
-				BlockState fan = SeafloorFanFeature.randomFan(random).defaultBlockState();
-				if (fan.hasProperty(BlockStateProperties.WATERLOGGED)) {
-					fan = fan.setValue(BlockStateProperties.WATERLOGGED, true);
-				}
-				level.setBlock(cursor, fan, 3);
-				placedFans++;
 			}
 		}
 	}
@@ -276,7 +247,7 @@ public class PatchReefIslandFeature extends Feature<PatchReefIslandConfiguration
 	}
 
 	private static boolean setFloorCoral(WorldGenLevel level, BlockPos floor, BlockState state) {
-		if (isSeafloor(level.getBlockState(floor))) {
+		if (SeafloorHelpers.isSoftSeafloor(level.getBlockState(floor))) {
 			level.setBlock(floor, state, 3);
 			return true;
 		}
@@ -284,14 +255,17 @@ public class PatchReefIslandFeature extends Feature<PatchReefIslandConfiguration
 	}
 
 	private static void tryCap(WorldGenLevel level, BlockPos pos, RandomSource random) {
-		if (!canPlaceInWater(level, pos)) {
+		if (random.nextFloat() < 0.6f) {
+			SeafloorHelpers.tryPlaceFan(level, pos, random);
 			return;
 		}
-		// Prefer a fan on coral tops sometimes; otherwise a coral plant.
-		Block cap = random.nextFloat() < 0.6f
-			? SeafloorFanFeature.randomFan(random)
-			: CORAL_PLANTS[random.nextInt(CORAL_PLANTS.length)];
-		BlockState state = cap.defaultBlockState();
+		if (!canPlaceInWater(level, pos) || SeafloorHelpers.isCoralFan(level.getBlockState(pos))) {
+			return;
+		}
+		if (!SeafloorHelpers.isFanSupport(level.getBlockState(pos.below()))) {
+			return;
+		}
+		BlockState state = SeafloorHelpers.randomHardCoralPlant(random).defaultBlockState();
 		if (state.hasProperty(BlockStateProperties.WATERLOGGED)) {
 			state = state.setValue(BlockStateProperties.WATERLOGGED, true);
 		}
@@ -316,7 +290,7 @@ public class PatchReefIslandFeature extends Feature<PatchReefIslandConfiguration
 				}
 				cursor.set(floor.getX() + dx, localFloorY, floor.getZ() + dz);
 				BlockState existing = level.getBlockState(cursor);
-				if (isSeafloor(existing) && !existing.is(BlockTags.SAND)) {
+				if (SeafloorHelpers.isSoftSeafloor(existing) && !existing.is(BlockTags.SAND)) {
 					level.setBlock(cursor, sand, 3);
 				}
 			}
@@ -324,23 +298,6 @@ public class PatchReefIslandFeature extends Feature<PatchReefIslandConfiguration
 	}
 
 	private static int findLocalFloorY(WorldGenLevel level, int x, int originFloorY, int z) {
-		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-		for (int y = originFloorY + 5; y >= originFloorY - 5; y--) {
-			cursor.set(x, y, z);
-			if (isSeafloor(level.getBlockState(cursor)) && level.getFluidState(cursor.above()).is(Fluids.WATER)) {
-				return y;
-			}
-		}
-		return Integer.MIN_VALUE;
-	}
-
-	private static boolean isSeafloor(BlockState state) {
-		return state.is(BlockTags.SAND)
-			|| state.is(Blocks.GRAVEL)
-			|| state.is(Blocks.CLAY)
-			|| state.is(Blocks.STONE)
-			|| state.is(Blocks.COBBLESTONE)
-			|| state.is(Blocks.DIRT)
-			|| state.is(Blocks.COARSE_DIRT);
+		return SeafloorHelpers.findLocalSoftFloorY(level, x, originFloorY, z, 5);
 	}
 }

@@ -1,5 +1,6 @@
 package com.midas.ecology.worldgen.feature;
 
+import com.midas.ecology.worldgen.seafloor.SeafloorHelpers;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
@@ -16,22 +17,6 @@ import net.minecraft.world.level.material.Fluids;
  * Soft-coral garden clump: gravel hardbottom with coral-block stubs, coral plants, and seafloor fans.
  */
 public class SoftCoralClumpFeature extends Feature<SoftCoralClumpConfiguration> {
-	private static final Block[] CORAL_BLOCKS = {
-		Blocks.TUBE_CORAL_BLOCK,
-		Blocks.BRAIN_CORAL_BLOCK,
-		Blocks.BUBBLE_CORAL_BLOCK,
-		Blocks.FIRE_CORAL_BLOCK,
-		Blocks.HORN_CORAL_BLOCK
-	};
-
-	private static final Block[] CORAL_PLANTS = {
-		Blocks.TUBE_CORAL,
-		Blocks.BRAIN_CORAL,
-		Blocks.BUBBLE_CORAL,
-		Blocks.FIRE_CORAL,
-		Blocks.HORN_CORAL
-	};
-
 	public SoftCoralClumpFeature(Codec<SoftCoralClumpConfiguration> codec) {
 		super(codec);
 	}
@@ -43,14 +28,7 @@ public class SoftCoralClumpFeature extends Feature<SoftCoralClumpConfiguration> 
 		SoftCoralClumpConfiguration config = context.config();
 		BlockPos.MutableBlockPos floor = context.origin().mutable();
 
-		if (!SeafloorFanFeature.isSeafloor(level.getBlockState(floor))) {
-			if (SeafloorFanFeature.isSeafloor(level.getBlockState(floor.below()))) {
-				floor.move(0, -1, 0);
-			} else {
-				return false;
-			}
-		}
-		if (!level.getFluidState(floor.above()).is(Fluids.WATER)) {
+		if (!SeafloorHelpers.snapToSoftFloor(level, floor) || !SeafloorHelpers.hasWaterAbove(level, floor)) {
 			return false;
 		}
 
@@ -106,14 +84,14 @@ public class SoftCoralClumpFeature extends Feature<SoftCoralClumpConfiguration> 
 			return false;
 		}
 
-		Block coralBlock = CORAL_BLOCKS[random.nextInt(CORAL_BLOCKS.length)];
+		Block coralBlock = SeafloorHelpers.randomHardCoralBlock(random);
 		BlockState block = coralBlock.defaultBlockState();
 		int height = tall ? 4 + random.nextInt(3) : 1 + random.nextInt(3); // tall: 4–6, normal: 1–3
 		boolean placed = false;
 		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 
 		cursor.set(floor.getX() + dx, localFloorY, floor.getZ() + dz);
-		if (SeafloorFanFeature.isSeafloor(level.getBlockState(cursor))) {
+		if (SeafloorHelpers.isSoftSeafloor(level.getBlockState(cursor))) {
 			level.setBlock(cursor, block, 3);
 			placed = true;
 		}
@@ -140,12 +118,10 @@ public class SoftCoralClumpFeature extends Feature<SoftCoralClumpConfiguration> 
 
 		if (placed) {
 			cursor.set(floor.getX() + dx, localFloorY + height, floor.getZ() + dz);
-			if (level.getFluidState(cursor).is(Fluids.WATER) && level.getBlockState(cursor).canBeReplaced()) {
-				if (random.nextBoolean()) {
-					placeWaterlogged(level, cursor, CORAL_PLANTS[random.nextInt(CORAL_PLANTS.length)], random);
-				} else {
-					placeWaterlogged(level, cursor, SeafloorFanFeature.randomFan(random), random);
-				}
+			if (random.nextBoolean()) {
+				placeWaterlogged(level, cursor, SeafloorHelpers.randomHardCoralPlant(random), random);
+			} else {
+				SeafloorHelpers.tryPlaceFan(level, cursor, random);
 			}
 		}
 
@@ -165,7 +141,7 @@ public class SoftCoralClumpFeature extends Feature<SoftCoralClumpConfiguration> 
 			return false;
 		}
 		BlockPos above = new BlockPos(floor.getX() + dx, localFloorY + 1, floor.getZ() + dz);
-		return placeWaterlogged(level, above, CORAL_PLANTS[random.nextInt(CORAL_PLANTS.length)], random);
+		return placeWaterlogged(level, above, SeafloorHelpers.randomHardCoralPlant(random), random);
 	}
 
 	private static boolean placeWaterlogged(WorldGenLevel level, BlockPos pos, Block block, RandomSource random) {
@@ -195,7 +171,7 @@ public class SoftCoralClumpFeature extends Feature<SoftCoralClumpConfiguration> 
 				}
 				cursor.set(floor.getX() + dx, localFloorY, floor.getZ() + dz);
 				BlockState existing = level.getBlockState(cursor);
-				if (!SeafloorFanFeature.isSeafloor(existing)) {
+				if (!SeafloorHelpers.isSoftSeafloor(existing)) {
 					continue;
 				}
 				if (random.nextFloat() < 0.22f) {
@@ -227,13 +203,6 @@ public class SoftCoralClumpFeature extends Feature<SoftCoralClumpConfiguration> 
 	}
 
 	private static int findLocalFloorY(WorldGenLevel level, int x, int originFloorY, int z) {
-		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-		for (int y = originFloorY + 4; y >= originFloorY - 4; y--) {
-			cursor.set(x, y, z);
-			if (SeafloorFanFeature.isSeafloor(level.getBlockState(cursor)) && level.getFluidState(cursor.above()).is(Fluids.WATER)) {
-				return y;
-			}
-		}
-		return Integer.MIN_VALUE;
+		return SeafloorHelpers.findLocalSoftFloorY(level, x, originFloorY, z);
 	}
 }

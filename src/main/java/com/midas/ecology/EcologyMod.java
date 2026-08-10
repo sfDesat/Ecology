@@ -14,7 +14,7 @@ public class EcologyMod implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		EcologyFeatures.register();
-		LOGGER.info("Ecology initialized ({} ocean habitat pockets)", EcologyBiomes.ALL.size());
+		LOGGER.info("Ecology initialized ({} habitat pockets, {} ocean biomes)", EcologyBiomes.POCKETS.size(), EcologyBiomes.ALL.size());
 	}
 
 	public static Identifier id(String path) {

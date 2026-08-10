@@ -1,95 +1,76 @@
-package com.midas.ecology.worldgen;
+package com.midas.ecology.worldgen.climate;
 
+import com.midas.ecology.worldgen.EcologyBiomes;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.biome.Climate;
 
 /**
- * Advanced shallow-ocean ParameterPoints: habitat pockets are constrained to
- * non-overlapping continentalness bands that roughly match BIOMES.md seafloor
- * depth targets. Parent bases keep weirdness [-1, 0] across the full shallow
- * span; fill placements claim weirdness (0, 1] on shelf depths with no pocket.
+ * Habitat pocket placements for shallow-ocean parent biomes.
+ * Keyed by parent biome — not by exact continentalness Parameter equality —
+ * so vanilla span tweaks do not silently disable Ecology oceans.
  *
- * <p>Frozen oceans are an exception: ice habitats use a shared wide shelf span
- * and weirdness niches so polynyas / ice edges / sympagic zones form blob-like
- * areas instead of depth-parallel coastal strips.
- *
- * <p>Continentalness within vanilla shallow ocean {@code [-0.455, -0.19]}
- * (more negative → deeper via {@code ecology:ocean_depth_control}):
+ * <p>Band ↔ depth mapping is aligned with {@code ecology:ocean_depth_control}
+ * (see DENSITY.md / BIOMES.md):
  * <pre>
  *   SHORE   [-0.22, -0.19]  ~0–10 blocks
  *   INNER   [-0.28, -0.22]  ~8–15
  *   MID     [-0.34, -0.28]  ~15–25
  *   OUTER   [-0.40, -0.34]  ~25–35
- *   DEEP    [-0.455, -0.40] ~35–45
+ *   DEEP    [SHELF_EDGE, -0.40] ~35–45  (SHELF_EDGE = -0.48)
  * </pre>
+ *
+ * <p>Frozen oceans use weirdness niches on a wide shelf (blob habitats).
+ * Warm outer shelf maps to {@link EcologyBiomes#DEEP_BASIN} so the pelagic
+ * column resolver can stack Open over Deep Basin.
+ *
+ * <p>Continentalness: more negative = farther from land. Shallow shelf is
+ * {@code [SHELF_EDGE, -0.19]}; deep basin is more oceanic than {@code SHELF_EDGE}.
  */
-public final class OceanHabitatPockets {
-	/** Vanilla shallow-ocean continentalness from {@code OverworldBiomeBuilder}. */
-	public static final Climate.Parameter SHALLOW_OCEAN_CONTINENTALNESS = Climate.Parameter.span(-0.455f, -0.19f);
+public final class HabitatPocketTable {
+	/**
+	 * Seaward edge of the continental shelf / shoreward edge of deep basin.
+	 * Vanilla shallow oceans stop at {@code -0.455}; Ecology nudges the shelf
+	 * slightly farther offshore (middle ground vs a larger {@code -0.50} push).
+	 */
+	public static final float SHELF_EDGE = -0.48f;
+
+	public static final Climate.Parameter SHALLOW_OCEAN_CONTINENTALNESS = Climate.Parameter.span(SHELF_EDGE, -0.19f);
 
 	public static final Climate.Parameter PARENT_WEIRDNESS = Climate.Parameter.span(-1.0f, 0.0f);
 	public static final Climate.Parameter POCKET_WEIRDNESS = Climate.Parameter.span(0.0f, 1.0f);
 
-	// --- Shared shelf bands (aligned with ocean_depth_control) ---
-
-	/** ~0–10 */
 	public static final Climate.Parameter SHORE = Climate.Parameter.span(-0.22f, -0.19f);
-	/** ~0–15 */
 	public static final Climate.Parameter SHORE_INNER = Climate.Parameter.span(-0.28f, -0.19f);
-	/** ~15–45 (kelp forest wide band) */
-	public static final Climate.Parameter MID_TO_DEEP = Climate.Parameter.span(-0.455f, -0.28f);
+	public static final Climate.Parameter MID_TO_DEEP = Climate.Parameter.span(SHELF_EDGE, -0.28f);
 
-	// --- Frozen: weirdness niches on a wide shelf (blob patches, not depth strips) ---
-
-	/**
-	 * Wide shallow–mid shelf for ice habitats. Continentalness bands alone paint
-	 * coastal-parallel strips; weirdness slices on this span yield area-like pockets.
-	 */
 	private static final Climate.Parameter FROZEN_HABITAT_SHELF = Climate.Parameter.span(-0.40f, -0.19f);
-	/** Outer shelf beyond habitat pockets — always plain frozen ocean. */
-	private static final Climate.Parameter FROZEN_OUTER_FILL = Climate.Parameter.span(-0.455f, -0.40f);
-
-	/** Remaining positive weirdness → plain frozen ocean between ice-habitat blobs. */
+	private static final Climate.Parameter FROZEN_OUTER_FILL = Climate.Parameter.span(SHELF_EDGE, -0.40f);
 	private static final Climate.Parameter FROZEN_FILL_WEIRDNESS_A = Climate.Parameter.span(0.0f, 0.14f);
 	private static final Climate.Parameter FROZEN_SYMPAGIC_WEIRDNESS = Climate.Parameter.span(0.14f, 0.34f);
 	private static final Climate.Parameter FROZEN_ICE_EDGE_WEIRDNESS = Climate.Parameter.span(0.34f, 0.54f);
-	/** Mid size — between the last “too big” and earlier smaller niche. */
 	private static final Climate.Parameter FROZEN_POLYNYA_WEIRDNESS = Climate.Parameter.span(0.54f, 0.76f);
 	private static final Climate.Parameter FROZEN_FILL_WEIRDNESS_B = Climate.Parameter.span(0.76f, 1.0f);
 
-	// Contiguous non-overlapping pocket slices (per parent). Shared edges only.
-
-	/** Cold: Eelgrass ~0–10 */
 	private static final Climate.Parameter COLD_EELGRASS_BAND = SHORE_INNER;
-	/** Cold: Kelp Forest ~15–35 */
 	private static final Climate.Parameter COLD_KELP_BAND = MID_TO_DEEP;
 
-	/** Temperate: Seagrass Meadow ~0–15 */
-	private static final Climate.Parameter TEMP_MEADOW = SHORE_INNER;
-	/** Temperate: Rocky Reef ~15–30 */
-	private static final Climate.Parameter TEMP_REEF = Climate.Parameter.span(-0.40f, -0.28f);
-	/** Temperate: Sand Wave Field ~30–45 */
-	private static final Climate.Parameter TEMP_SAND = Climate.Parameter.span(-0.455f, -0.40f);
+	private static final Climate.Parameter TEMPERATE_MEADOW = SHORE_INNER;
+	private static final Climate.Parameter TEMPERATE_REEF = Climate.Parameter.span(-0.40f, -0.28f);
+	private static final Climate.Parameter TEMPERATE_SAND = Climate.Parameter.span(SHELF_EDGE, -0.40f);
 
-	/** Lukewarm: Subtropical Seagrass ~0–10 */
 	private static final Climate.Parameter LUKE_SEAGRASS = Climate.Parameter.span(-0.25f, -0.19f);
-	/** Lukewarm: Patch Reef ~10–20 */
 	private static final Climate.Parameter LUKE_PATCH = Climate.Parameter.span(-0.34f, -0.25f);
-	/** Lukewarm: Soft Coral Garden ~25–45 */
-	private static final Climate.Parameter LUKE_SOFT = Climate.Parameter.span(-0.455f, -0.34f);
+	private static final Climate.Parameter LUKE_SOFT = Climate.Parameter.span(SHELF_EDGE, -0.34f);
 
-	/** Warm: Lagoon ~0–8 */
 	private static final Climate.Parameter WARM_LAGOON = SHORE;
-	/** Warm: Tropical Seagrass ~0–12 */
 	private static final Climate.Parameter WARM_SEAGRASS = Climate.Parameter.span(-0.28f, -0.22f);
-	/** Warm: Coral Reef ~10–20 */
 	private static final Climate.Parameter WARM_CORAL = Climate.Parameter.span(-0.36f, -0.28f);
-	/** Warm outer shelf fill (no reef pocket past ~20–25). */
-	private static final Climate.Parameter WARM_OUTER_FILL = Climate.Parameter.span(-0.455f, -0.36f);
+	private static final Climate.Parameter WARM_OUTER_FILL = Climate.Parameter.span(SHELF_EDGE, -0.36f);
 
 	private static final Map<ResourceKey<Biome>, List<Placement>> PLACEMENTS_BY_PARENT = Map.of(
 		Biomes.FROZEN_OCEAN,
@@ -111,9 +92,9 @@ public final class OceanHabitatPockets {
 		Biomes.OCEAN,
 		List.of(
 			placement(Biomes.OCEAN, SHALLOW_OCEAN_CONTINENTALNESS, PARENT_WEIRDNESS),
-			placement(EcologyBiomes.SEAGRASS_MEADOW, TEMP_MEADOW, POCKET_WEIRDNESS),
-			placement(EcologyBiomes.TEMPERATE_ROCKY_REEF, TEMP_REEF, POCKET_WEIRDNESS),
-			placement(EcologyBiomes.SAND_WAVE_FIELD, TEMP_SAND, POCKET_WEIRDNESS)
+			placement(EcologyBiomes.SEAGRASS_MEADOW, TEMPERATE_MEADOW, POCKET_WEIRDNESS),
+			placement(EcologyBiomes.TEMPERATE_ROCKY_REEF, TEMPERATE_REEF, POCKET_WEIRDNESS),
+			placement(EcologyBiomes.SAND_WAVE_FIELD, TEMPERATE_SAND, POCKET_WEIRDNESS)
 		),
 		Biomes.LUKEWARM_OCEAN,
 		List.of(
@@ -125,32 +106,46 @@ public final class OceanHabitatPockets {
 		Biomes.WARM_OCEAN,
 		List.of(
 			placement(Biomes.WARM_OCEAN, SHALLOW_OCEAN_CONTINENTALNESS, PARENT_WEIRDNESS),
-			// Outer warm shelf: deep floor → pelagic stack (Open over Deep), not plain warm_ocean
-			placement(EcologyBiomes.DEEP_OCEAN, WARM_OUTER_FILL, POCKET_WEIRDNESS),
+			placement(EcologyBiomes.DEEP_BASIN, WARM_OUTER_FILL, POCKET_WEIRDNESS),
 			placement(EcologyBiomes.LAGOON, WARM_LAGOON, POCKET_WEIRDNESS),
 			placement(EcologyBiomes.TROPICAL_SEAGRASS, WARM_SEAGRASS, POCKET_WEIRDNESS),
 			placement(EcologyBiomes.CORAL_REEF, WARM_CORAL, POCKET_WEIRDNESS)
 		)
 	);
 
-	private OceanHabitatPockets() {
+	private static final Set<ResourceKey<Biome>> SHALLOW_OCEAN_PARENTS = PLACEMENTS_BY_PARENT.keySet();
+
+	private HabitatPocketTable() {
 	}
 
-	public static boolean isShallowOceanContinentalness(Climate.Parameter continentalness) {
-		return SHALLOW_OCEAN_CONTINENTALNESS.equals(continentalness);
+	public static boolean isShallowOceanParent(ResourceKey<Biome> biome) {
+		return SHALLOW_OCEAN_PARENTS.contains(biome);
 	}
 
 	public static List<Placement> placementsFor(ResourceKey<Biome> parent) {
 		return PLACEMENTS_BY_PARENT.get(parent);
 	}
 
+	/**
+	 * Trims vanilla deep-ocean continentalness so it stops at {@link #SHELF_EDGE}
+	 * and does not overlap the expanded shallow shelf.
+	 */
+	public static Climate.Parameter clampDeepContinentalness(Climate.Parameter continentalness) {
+		float min = Climate.unquantizeCoord(continentalness.min());
+		float max = Climate.unquantizeCoord(continentalness.max());
+		if (max <= SHELF_EDGE) {
+			return continentalness;
+		}
+		if (min >= SHELF_EDGE) {
+			return Climate.Parameter.span(SHELF_EDGE, SHELF_EDGE);
+		}
+		return Climate.Parameter.span(min, SHELF_EDGE);
+	}
+
 	private static Placement placement(ResourceKey<Biome> biome, Climate.Parameter continentalness, Climate.Parameter weirdness) {
 		return new Placement(biome, continentalness, weirdness);
 	}
 
-	/**
-	 * One MultiNoise surface registration (emitted at climate depth 0 and 1).
-	 */
 	public record Placement(ResourceKey<Biome> biome, Climate.Parameter continentalness, Climate.Parameter weirdness) {
 	}
 }

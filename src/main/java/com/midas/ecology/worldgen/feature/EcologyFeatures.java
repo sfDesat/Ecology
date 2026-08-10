@@ -50,13 +50,6 @@ public final class EcologyFeatures {
 			new SoftCoralClumpFeature(SoftCoralClumpConfiguration.CODEC)
 		);
 
-	public static final Feature<NoneFeatureConfiguration> PACK_ICE_FREEZE =
-		Registry.register(
-			BuiltInRegistries.FEATURE,
-			EcologyMod.id("pack_ice_freeze"),
-			new PackIceFreezeFeature(NoneFeatureConfiguration.CODEC)
-		);
-
 	/** Ecology-owned iceberg with frozen-ocean column checks (no biome filter needed). */
 	public static final Feature<BlockStateConfiguration> ICEBERG =
 		Registry.register(

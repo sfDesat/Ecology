@@ -1,7 +1,6 @@
-package com.midas.ecology.worldgen.feature;
+package com.midas.ecology.worldgen.surface;
 
 import com.google.common.collect.ImmutableList;
-import com.mojang.serialization.Codec;
 import com.midas.ecology.worldgen.EcologyBiomes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -18,50 +17,41 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
-import net.minecraft.world.level.levelgen.feature.Feature;
-import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
-import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.synth.PerlinSimplexNoise;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.LightLayer;
 
 /**
- * Custom surface ice applied once per chunk after decoration (see
- * {@code ChunkGeneratorMixin}). Decides per column so ice is not gated by the
- * chunk-corner biome's feature list.
+ * Column-based sea-ice system. Applied once per chunk after biome decoration so
+ * ice is decided per column (not gated by the chunk-corner biome feature list).
  *
- * <p>Also <em>opens</em> thin ice on Polynya / Ice Edge / pack holes. Vanilla
- * {@code freeze_top_layer} can still solid-freeze those columns when the chunk
- * corner is a land biome that shares that feature — without clearing, open
- * pockets stay iced and look like square cutoffs.
+ * <p>Also opens thin ice on Polynya / Ice Edge / pack holes when vanilla
+ * {@code freeze_top_layer} iced them from a neighboring land biome.
  */
-public class PackIceFreezeFeature extends Feature<NoneFeatureConfiguration> {
+public final class ColumnIceSystem {
+	private static final long HOLE_SEED = 8742L;
+	private static final long HOLE_SHAPE_SEED = 8743L;
+	private static final long FLOE_SEED = 8744L;
+	private static final long PLATE_SEED = 8745L;
+
 	private static final PerlinSimplexNoise HOLE_NOISE = new PerlinSimplexNoise(
-		new WorldgenRandom(new LegacyRandomSource(8742L)),
+		new WorldgenRandom(new LegacyRandomSource(HOLE_SEED)),
 		ImmutableList.of(0)
 	);
 	private static final PerlinSimplexNoise HOLE_SHAPE_NOISE = new PerlinSimplexNoise(
-		new WorldgenRandom(new LegacyRandomSource(8743L)),
+		new WorldgenRandom(new LegacyRandomSource(HOLE_SHAPE_SEED)),
 		ImmutableList.of(0)
 	);
 	private static final PerlinSimplexNoise FLOE_NOISE = new PerlinSimplexNoise(
-		new WorldgenRandom(new LegacyRandomSource(8744L)),
+		new WorldgenRandom(new LegacyRandomSource(FLOE_SEED)),
 		ImmutableList.of(0)
 	);
 	private static final PerlinSimplexNoise PLATE_NOISE = new PerlinSimplexNoise(
-		new WorldgenRandom(new LegacyRandomSource(8745L)),
+		new WorldgenRandom(new LegacyRandomSource(PLATE_SEED)),
 		ImmutableList.of(0)
 	);
 
-	public PackIceFreezeFeature(Codec<NoneFeatureConfiguration> codec) {
-		super(codec);
-	}
-
-	@Override
-	public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
-		BlockPos origin = context.origin();
-		applyToChunk(context.level(), new ChunkPos(origin.getX() >> 4, origin.getZ() >> 4));
-		return true;
+	private ColumnIceSystem() {
 	}
 
 	public static void applyToChunk(WorldGenLevel level, ChunkPos chunkPos) {
@@ -98,7 +88,6 @@ public class PackIceFreezeFeature extends Feature<NoneFeatureConfiguration> {
 						}
 					}
 				} else if (mode.opensWater()) {
-					// Undo vanilla freeze_top_layer on open pockets / pack holes.
 					openThinIce(level, surfacePos);
 					openThinIce(level, topPos);
 					clearSnowAboveWater(level, topPos, surfacePos);
@@ -151,7 +140,7 @@ public class PackIceFreezeFeature extends Feature<NoneFeatureConfiguration> {
 		};
 	}
 
-	static boolean isPackWaterHole(int x, int z) {
+	private static boolean isPackWaterHole(int x, int z) {
 		double center = HOLE_NOISE.getValue(x * 0.028, z * 0.028, false);
 		if (center < 0.40) {
 			return false;
@@ -160,7 +149,7 @@ public class PackIceFreezeFeature extends Feature<NoneFeatureConfiguration> {
 		return (center * 0.7 + shape * 0.3) > 0.34;
 	}
 
-	static boolean isEdgeIce(int x, int z) {
+	private static boolean isEdgeIce(int x, int z) {
 		double plate = PLATE_NOISE.getValue(x * 0.022, z * 0.022, false);
 		if (plate > 0.50) {
 			double plateShape = HOLE_SHAPE_NOISE.getValue(x * 0.07, z * 0.07, false);
@@ -171,7 +160,7 @@ public class PackIceFreezeFeature extends Feature<NoneFeatureConfiguration> {
 		return isSparseFloe(x, z, 0.58);
 	}
 
-	static boolean isSparseFloe(int x, int z, double threshold) {
+	private static boolean isSparseFloe(int x, int z, double threshold) {
 		double floe = FLOE_NOISE.getValue(x * 0.09, z * 0.09, false);
 		double detail = HOLE_SHAPE_NOISE.getValue(x * 0.22, z * 0.22, false);
 		return (floe * 0.8 + detail * 0.2) > threshold;
@@ -185,7 +174,6 @@ public class PackIceFreezeFeature extends Feature<NoneFeatureConfiguration> {
 		return level.getFluidState(pos).is(Fluids.WATER) && blockState.getBlock() instanceof LiquidBlock;
 	}
 
-	/** Thin freeze ice only — leave iceberg packed/blue ice alone. */
 	private static boolean isThinIce(BlockState state) {
 		return state.is(Blocks.ICE) || state.is(Blocks.FROSTED_ICE);
 	}

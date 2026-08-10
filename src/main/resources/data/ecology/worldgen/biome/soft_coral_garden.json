@@ -20,10 +20,12 @@
     "minecraft:visual/sky_color": "#7ba4ff",
     "minecraft:visual/water_fog_color": "#061e30"
   },
-  "carvers": [],
+  "carvers": [
+    "minecraft:cave"
+  ],
   "downfall": 0.5,
   "effects": {
-    "water_color": "#3a9ad4"
+    "water_color": "#4496d8"
   },
   "features": [
     [],
@@ -31,9 +33,7 @@
       "minecraft:lake_lava_underground",
       "minecraft:lake_lava_surface"
     ],
-    [
-      "minecraft:amethyst_geode"
-    ],
+    [],
     [
       "minecraft:monster_room",
       "minecraft:monster_room_deep"
@@ -81,87 +81,22 @@
     ],
     [
       "minecraft:glow_lichen",
-      "minecraft:trees_water",
-      "minecraft:flower_default",
-      "minecraft:patch_grass_badlands",
-      "minecraft:brown_mushroom_normal",
-      "minecraft:red_mushroom_normal",
-      "minecraft:patch_pumpkin",
-      "minecraft:patch_sugar_cane",
-      "minecraft:patch_firefly_bush_near_water",
       "ecology:soft_coral_clump",
       "ecology:seafloor_fan",
       "ecology:sea_pickle_sparse",
       "ecology:seagrass_very_sparse",
       "ecology:rocky_reef_rock_small"
     ],
-    [
-      "minecraft:freeze_top_layer"
-    ]
+    []
   ],
   "has_precipitation": true,
   "spawn_costs": {},
   "spawners": {
-    "ambient": [
-      {
-        "type": "minecraft:bat",
-        "maxCount": 8,
-        "minCount": 8,
-        "weight": 10
-      }
-    ],
+    "ambient": [],
     "axolotls": [],
     "creature": [],
     "misc": [],
     "monster": [
-      {
-        "type": "minecraft:spider",
-        "maxCount": 4,
-        "minCount": 4,
-        "weight": 100
-      },
-      {
-        "type": "minecraft:zombie",
-        "maxCount": 4,
-        "minCount": 4,
-        "weight": 95
-      },
-      {
-        "type": "minecraft:zombie_villager",
-        "maxCount": 1,
-        "minCount": 1,
-        "weight": 5
-      },
-      {
-        "type": "minecraft:skeleton",
-        "maxCount": 4,
-        "minCount": 4,
-        "weight": 100
-      },
-      {
-        "type": "minecraft:creeper",
-        "maxCount": 4,
-        "minCount": 4,
-        "weight": 100
-      },
-      {
-        "type": "minecraft:slime",
-        "maxCount": 4,
-        "minCount": 4,
-        "weight": 100
-      },
-      {
-        "type": "minecraft:enderman",
-        "maxCount": 4,
-        "minCount": 1,
-        "weight": 10
-      },
-      {
-        "type": "minecraft:witch",
-        "maxCount": 1,
-        "minCount": 1,
-        "weight": 5
-      },
       {
         "type": "minecraft:drowned",
         "maxCount": 1,

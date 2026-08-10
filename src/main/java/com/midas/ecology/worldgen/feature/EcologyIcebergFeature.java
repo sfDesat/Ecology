@@ -1,5 +1,6 @@
 package com.midas.ecology.worldgen.feature;
 
+import com.midas.ecology.worldgen.surface.ColumnIceSystem;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -31,7 +32,7 @@ public class EcologyIcebergFeature extends IcebergFeature {
 		BlockPos atSea = new BlockPos(origin.getX(), seaLevel, origin.getZ());
 
 		Holder<Biome> biome = level.getBiome(atSea);
-		if (!PackIceFreezeFeature.isFrozenOceanFamily(biome)) {
+		if (!ColumnIceSystem.isFrozenOceanFamily(biome)) {
 			return false;
 		}
 		if (!isSeaSurfaceWaterOrIce(level, atSea)) {
