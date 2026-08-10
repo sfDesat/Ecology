@@ -55,9 +55,9 @@ Animals: Arctic amphipods, brittle stars, ringed seals.
 
 #### Ice Edge
 
-Habitat pocket inside Frozen Ocean. Temperature: frozen (0.0). Depth: about 0–10 below sea level (Y 63–53).
+Habitat pocket inside Frozen Ocean, plus an outer-shelf continental fringe next to Deep Basin / Open Ocean. Temperature: frozen (0.0). Depth: about 0–10 below sea level (Y 63–53) for inland weirdness blobs; outer fringe sits on the deep shelf band (~35–45 below sea) with the same surface EDGE ice.
 
-The productive margin where pack ice meets open water — feeding grounds and seal haul-outs. Light ice cover with rare larger ice plates, plus sparse icebergs. Sparse gravel floor, richer salmon than the plain pack.
+The productive margin where pack ice meets open water — feeding grounds and seal haul-outs. Spawns as weirdness blobs on the frozen habitat shelf and as an intermittent pocket-weirdness fringe on the outer shelf (`[-0.48, -0.40]`) along the deep-basin boundary. Light ice cover with rare larger ice plates, plus sparse icebergs. Sparse gravel floor, richer salmon than the plain pack.
 
 Animals: Krill swarms, ivory gulls, harp seals, beluga whales, orcas.
 

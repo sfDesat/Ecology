@@ -49,6 +49,7 @@ public final class HabitatPocketTable {
 	public static final Climate.Parameter MID_TO_DEEP = Climate.Parameter.span(SHELF_EDGE, -0.28f);
 
 	private static final Climate.Parameter FROZEN_HABITAT_SHELF = Climate.Parameter.span(-0.40f, -0.19f);
+	/** Outer frozen shelf fringe next to Deep Basin / Open Ocean. */
 	private static final Climate.Parameter FROZEN_OUTER_FILL = Climate.Parameter.span(SHELF_EDGE, -0.40f);
 	private static final Climate.Parameter FROZEN_FILL_WEIRDNESS_A = Climate.Parameter.span(0.0f, 0.14f);
 	private static final Climate.Parameter FROZEN_SYMPAGIC_WEIRDNESS = Climate.Parameter.span(0.14f, 0.34f);
@@ -78,7 +79,7 @@ public final class HabitatPocketTable {
 			placement(Biomes.FROZEN_OCEAN, SHALLOW_OCEAN_CONTINENTALNESS, PARENT_WEIRDNESS),
 			placement(Biomes.FROZEN_OCEAN, FROZEN_HABITAT_SHELF, FROZEN_FILL_WEIRDNESS_A),
 			placement(Biomes.FROZEN_OCEAN, FROZEN_HABITAT_SHELF, FROZEN_FILL_WEIRDNESS_B),
-			placement(Biomes.FROZEN_OCEAN, FROZEN_OUTER_FILL, POCKET_WEIRDNESS),
+			placement(EcologyBiomes.ICE_EDGE, FROZEN_OUTER_FILL, POCKET_WEIRDNESS),
 			placement(EcologyBiomes.SYMPAGIC_ZONE, FROZEN_HABITAT_SHELF, FROZEN_SYMPAGIC_WEIRDNESS),
 			placement(EcologyBiomes.ICE_EDGE, FROZEN_HABITAT_SHELF, FROZEN_ICE_EDGE_WEIRDNESS),
 			placement(EcologyBiomes.POLYNYA, FROZEN_HABITAT_SHELF, FROZEN_POLYNYA_WEIRDNESS)

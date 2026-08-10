@@ -9,7 +9,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,7 +52,6 @@ public final class EcologyClientConfig {
 	public boolean debugHighlightAllTranslucent = false;
 
 	/** Legacy field from older configs; migrated into {@link #waterShaderEnabled} on load. */
-	@SuppressWarnings("unused")
 	private Boolean distantWaterOpacityEnabled;
 
 	private EcologyClientConfig() {
