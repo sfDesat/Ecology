@@ -97,44 +97,30 @@
     "creature": [
       {
         "type": "minecraft:polar_bear",
-        "maxCount": 2,
         "minCount": 1,
+        "maxCount": 1,
         "weight": 1
       }
     ],
     "misc": [],
-    "monster": [
-      {
-        "type": "minecraft:drowned",
-        "maxCount": 1,
-        "minCount": 1,
-        "weight": 5
-      }
-    ],
+    "monster": [],
     "underground_water_creature": [
       {
         "type": "minecraft:glow_squid",
-        "maxCount": 5,
         "minCount": 2,
-        "weight": 8
+        "maxCount": 4,
+        "weight": 5
       }
     ],
     "water_ambient": [
       {
         "type": "minecraft:salmon",
-        "maxCount": 3,
         "minCount": 1,
-        "weight": 10
+        "maxCount": 2,
+        "weight": 8
       }
     ],
-    "water_creature": [
-      {
-        "type": "minecraft:squid",
-        "maxCount": 2,
-        "minCount": 1,
-        "weight": 1
-      }
-    ]
+    "water_creature": []
   },
   "temperature": 0.0
 }

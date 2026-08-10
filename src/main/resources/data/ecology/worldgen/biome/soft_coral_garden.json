@@ -96,48 +96,35 @@
     "axolotls": [],
     "creature": [],
     "misc": [],
-    "monster": [
-      {
-        "type": "minecraft:drowned",
-        "maxCount": 1,
-        "minCount": 1,
-        "weight": 5
-      }
-    ],
+    "monster": [],
     "underground_water_creature": [
       {
         "type": "minecraft:glow_squid",
-        "maxCount": 6,
-        "minCount": 3,
-        "weight": 10
+        "minCount": 2,
+        "maxCount": 4,
+        "weight": 5
       }
     ],
     "water_ambient": [
       {
         "type": "minecraft:tropical_fish",
+        "minCount": 5,
         "maxCount": 8,
-        "minCount": 4,
-        "weight": 28
+        "weight": 15
       },
       {
         "type": "minecraft:pufferfish",
-        "maxCount": 2,
         "minCount": 1,
+        "maxCount": 2,
         "weight": 5
       }
     ],
     "water_creature": [
       {
         "type": "minecraft:squid",
+        "minCount": 1,
         "maxCount": 3,
-        "minCount": 1,
-        "weight": 4
-      },
-      {
-        "type": "minecraft:nautilus",
-        "maxCount": 1,
-        "minCount": 1,
-        "weight": 3
+        "weight": 2
       }
     ]
   },

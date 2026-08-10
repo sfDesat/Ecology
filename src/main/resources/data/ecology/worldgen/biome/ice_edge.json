@@ -89,44 +89,30 @@
   "spawners": {
     "ambient": [],
     "axolotls": [],
-    "creature": [
-      {
-        "type": "minecraft:polar_bear",
-        "maxCount": 2,
-        "minCount": 1,
-        "weight": 2
-      }
-    ],
+    "creature": [],
     "misc": [],
-    "monster": [
-      {
-        "type": "minecraft:drowned",
-        "maxCount": 1,
-        "minCount": 1,
-        "weight": 5
-      }
-    ],
+    "monster": [],
     "underground_water_creature": [
       {
         "type": "minecraft:glow_squid",
-        "maxCount": 6,
-        "minCount": 3,
-        "weight": 8
+        "minCount": 2,
+        "maxCount": 4,
+        "weight": 5
       }
     ],
     "water_ambient": [
       {
         "type": "minecraft:salmon",
-        "maxCount": 6,
-        "minCount": 2,
-        "weight": 20
+        "minCount": 3,
+        "maxCount": 5,
+        "weight": 15
       }
     ],
     "water_creature": [
       {
         "type": "minecraft:squid",
-        "maxCount": 4,
         "minCount": 1,
+        "maxCount": 2,
         "weight": 2
       }
     ]

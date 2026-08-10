@@ -86,37 +86,49 @@
   "spawners": {
     "ambient": [],
     "axolotls": [],
-    "creature": [],
-    "misc": [],
-    "monster": [
+    "creature": [
       {
-        "type": "minecraft:drowned",
-        "maxCount": 1,
-        "minCount": 1,
+        "type": "minecraft:turtle",
+        "minCount": 2,
+        "maxCount": 4,
         "weight": 5
       }
     ],
+    "misc": [],
+    "monster": [],
     "underground_water_creature": [
       {
         "type": "minecraft:glow_squid",
-        "maxCount": 2,
-        "minCount": 1,
-        "weight": 2
+        "minCount": 2,
+        "maxCount": 4,
+        "weight": 5
       }
     ],
     "water_ambient": [
       {
         "type": "minecraft:tropical_fish",
-        "maxCount": 6,
-        "minCount": 2,
-        "weight": 22
+        "minCount": 6,
+        "maxCount": 8,
+        "weight": 20
+      },
+      {
+        "type": "minecraft:pufferfish",
+        "minCount": 1,
+        "maxCount": 3,
+        "weight": 8
       }
     ],
     "water_creature": [
       {
-        "type": "minecraft:squid",
-        "maxCount": 1,
+        "type": "minecraft:turtle",
+        "minCount": 2,
+        "maxCount": 5,
+        "weight": 8
+      },
+      {
+        "type": "minecraft:dolphin",
         "minCount": 1,
+        "maxCount": 1,
         "weight": 1
       }
     ]

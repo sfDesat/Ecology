@@ -121,9 +121,9 @@ public final class ColumnIceSystem {
 		if (key.equals(EcologyBiomes.POLYNYA)) {
 			return IceMode.POLYNYA;
 		}
-		if (key.equals(Biomes.STONY_SHORE) || key.equals(Biomes.SNOWY_BEACH)) {
-			return IceMode.SOLID;
-		}
+		// Do not ice stony shore / temperate coasts — only frozen-ocean-family biomes
+		// above get pack/edge/polynya ice. Truly cold land (<0.15) may still freeze
+		// standing water (snowy beach, etc.); stony shore is ~0.2 and must stay open.
 		if (biome.getBaseTemperature() < 0.15F) {
 			return IceMode.SOLID;
 		}

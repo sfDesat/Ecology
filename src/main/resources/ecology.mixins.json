@@ -3,13 +3,15 @@
 	"package": "com.midas.ecology.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
+		"AbstractSchoolingFishMixin",
 		"OverworldBiomeBuilderMixin",
 		"BiomeSourceMixin",
 		"MultiNoiseBiomeSourceMixin",
 		"HolderReferenceAccessor",
 		"OceanMonumentStructureMixin",
 		"OceanMonumentPiecesMonumentBuildingMixin",
-		"ChunkGeneratorMixin"
+		"ChunkGeneratorMixin",
+		"SpawnPlacementsMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
