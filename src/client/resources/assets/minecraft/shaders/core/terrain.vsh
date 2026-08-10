@@ -17,7 +17,7 @@ out float sphericalVertexDistance;
 out float cylindricalVertexDistance;
 out vec4 vertexColor;
 out vec2 texCoord0;
-out float ecologyWaterTop;
+out float ecologyWaterFace;
 out float ecologyGrazing;
 
 void main() {
@@ -27,14 +27,13 @@ void main() {
     sphericalVertexDistance = fog_spherical_distance(pos);
     cylindricalVertexDistance = fog_cylindrical_distance(pos);
 
-    // FluidRenderer tags water UP faces with alpha 253/255 (~0.992156).
-    bool waterTop = Color.a > 0.980 && Color.a < 0.999;
-    ecologyWaterTop = waterTop ? 1.0 : 0.0;
+    // FluidRenderer tags water faces with alpha 253/255 (~0.992156).
+    bool waterFace = Color.a > 0.980 && Color.a < 0.999;
+    ecologyWaterFace = waterFace ? 1.0 : 0.0;
 
-    // Raw grazing vs world-up (0 = looking down, 1 = horizon). Power curve applied in fsh.
-    // Only computed for marked tops; safe when camera sits on the vertex (pos length ~ 0).
+    // Raw grazing vs world-up (0 = looking down, 1 = horizon). Used by opaque-water fresnel.
     ecologyGrazing = 0.0;
-    if (waterTop) {
+    if (waterFace) {
         float posLen = length(pos);
         if (posLen > 1e-4) {
             float cosTheta = clamp((-pos / posLen).y, 0.0, 1.0);
@@ -43,8 +42,8 @@ void main() {
     }
 
     vec4 light = sample_lightmap(Sampler2, UV2);
-    if (waterTop) {
-        // Restore full vertex alpha so the marker does not permanently darken tops.
+    if (waterFace) {
+        // Restore full vertex alpha so the marker does not permanently darken water.
         vertexColor = vec4(Color.rgb * light.rgb, light.a);
     } else {
         vertexColor = Color * light;

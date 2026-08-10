@@ -4,6 +4,7 @@
 #moj_import <minecraft:globals.glsl>
 #moj_import <minecraft:chunksection.glsl>
 #moj_import <ecology:distant_water_settings.glsl>
+#moj_import <ecology:water_mask.glsl>
 
 uniform sampler2D Sampler0;
 
@@ -11,7 +12,7 @@ in float sphericalVertexDistance;
 in float cylindricalVertexDistance;
 in vec4 vertexColor;
 in vec2 texCoord0;
-in float ecologyWaterTop;
+in float ecologyWaterFace;
 in float ecologyGrazing;
 
 out vec4 fragColor;
@@ -91,20 +92,27 @@ vec4 sampleRGSS(sampler2D source, vec2 uv, vec2 pixelSize) {
 void main() {
     vec4 color = (UseRgss == 1 ? sampleRGSS(Sampler0, texCoord0, 1.0f / TextureSize) : sampleNearest(Sampler0, texCoord0, 1.0f / TextureSize)) * vertexColor;
 
-    bool waterTop = ecologyWaterTop > 0.5;
-    bool wantEffect = EcologyWaterShaderEnabled > 0.5;
-    bool wantDebug = EcologyWaterDebugTops > 0.5 || EcologyWaterDebugFresnel > 0.5 || EcologyWaterDebugAll > 0.5;
-    bool cameraUnderwater = FogCloudsEnd < 0.0;
+    bool ecologyActive = EcologyWaterShaderEnabled > 0.5;
+    bool waterFace = ecologyWaterFace > 0.5;
+    bool cameraUnderwater = EcologyCameraUnderwater > 0.5;
+    bool opacityMode = ecologyActive && EcologyDistantWaterMode > 0.5 && EcologyDistantWaterMode < 1.5;
+    bool fogRemapMode = ecologyActive && EcologyDistantWaterMode > 1.5;
+    bool wantDebug = ecologyActive && (EcologyWaterDebugTops > 0.5
+        || EcologyWaterDebugFresnel > 0.5
+        || EcologyWaterDebugAll > 0.5);
 
-    // Skip distance/fresnel work unless this is a marked top or a debug path needs it.
-    if (waterTop && (wantEffect || wantDebug)) {
-        float fogRange = max(FogRenderDistanceEnd, 1.0);
-        float opacityStart = fogRange * EcologyDistanceOpacityStart;
-        float opacityEnd = max(fogRange * EcologyDistanceOpacityEnd, opacityStart + 0.001);
-        float distFactor = linear_fog_value(cylindricalVertexDistance, opacityStart, opacityEnd);
-        float fresnelCurve = pow(clamp(ecologyGrazing, 0.0, 1.0), max(EcologyFresnelPower, 0.25));
+    float fogRange = max(FogRenderDistanceEnd, 1.0);
+    float opacityStart = fogRange * EcologyDistanceOpacityStart;
+    float opacityEnd = max(fogRange * EcologyDistanceOpacityEnd, opacityStart + 0.001);
+    float distFactor = linear_fog_value(cylindricalVertexDistance, opacityStart, opacityEnd);
+    float fresnelCurve = pow(clamp(ecologyGrazing, 0.0, 1.0), max(EcologyFresnelPower, 0.25));
 
-        if (wantEffect && !cameraUnderwater && color.a > 0.001) {
+    vec4 fogForFragment = FogColor;
+
+    // Fog tint (empty-behind sky/fog) lives in post/transparency.fsh — terrain cannot see
+    // framebuffer depth. Only opaque-water alpha + surface debug run here.
+    if (waterFace && (opacityMode || wantDebug)) {
+        if (opacityMode && !cameraUnderwater && color.a > 0.001) {
             float distOpacity = EcologyDistanceOpacityEnabled > 0.5
                 ? distFactor * EcologyDistanceOpacityStrength
                 : 0.0;
@@ -132,15 +140,20 @@ void main() {
         }
     }
 
-    if (EcologyWaterDebugAll > 0.5 && color.a > 0.001 && color.a < 0.999) {
+    if (ecologyActive && EcologyWaterDebugAll > 0.5 && color.a > 0.001 && color.a < 0.999) {
         color = vec4(0.0, 1.0, 1.0, max(color.a, 0.85));
     }
 
-    color = mix(FogColor * vec4(1, 1, 1, color.a), color, ChunkVisibility);
+    color = mix(fogForFragment * vec4(1, 1, 1, color.a), color, ChunkVisibility);
 #ifdef ALPHA_CUTOUT
     if (color.a < ALPHA_CUTOUT) {
         discard;
     }
 #endif
-    fragColor = apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
+    fragColor = apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, fogForFragment);
+
+    // Encode after fog so post can tell water from glass/ice without changing fogged RGB.
+    if (fogRemapMode) {
+        fragColor = ecologyEncodeTranslucentMask(fragColor, waterFace);
+    }
 }

@@ -21,9 +21,12 @@ public final class EcologyClientConfig {
 	private static boolean loaded;
 	private static String lastSavedJson = "";
 
-	/** Master switch for Ecology water surface opacity (distance + fresnel). */
-	public boolean waterShaderEnabled = true;
-	/** Distance-based opacity component (can disable to isolate fresnel). */
+	/**
+	 * Distant-water fix mode. Default {@link DistantWaterMode#FOG_REMAP} for new installs.
+	 * Null on disk means legacy config — migrated from {@link #waterShaderEnabled}.
+	 */
+	public DistantWaterMode distantWaterMode = DistantWaterMode.FOG_REMAP;
+	/** Distance-based opacity component (OPACITY mode only). */
 	public boolean distanceOpacityEnabled = true;
 	public float distantWaterOpacityStrength = 1.0F;
 	/** Lower = opacity starts closer to the player (fraction of FogRenderDistanceEnd). */
@@ -39,20 +42,59 @@ public final class EcologyClientConfig {
 	 */
 	public float fresnelPower = 0.75F;
 	/**
-	 * When true, Ecology water opacity turns off while an Iris shader pack is active.
+	 * FOG_REMAP: how hard underwater sight fog / empty fill applies (0-1).
+	 */
+	public float fogRemapBiasStrength = 1.0F;
+	/**
+	 * FOG_REMAP: blocks from camera where custom underwater fog begins (behind water).
+	 */
+	public float underwaterSightStart = 16.0F;
+	/**
+	 * FOG_REMAP: blocks from camera where underwater fog is full (when not using render-distance %).
+	 */
+	public float underwaterSightEnd = 100.0F;
+	/**
+	 * FOG_REMAP: when true, sight end is {@link #underwaterSightEndPercent} of fog render distance
+	 * instead of {@link #underwaterSightEnd} blocks.
+	 */
+	public boolean underwaterSightEndUseRenderDistancePercent = false;
+	/**
+	 * FOG_REMAP: percent of fog render distance (1-100) used as sight end when
+	 * {@link #underwaterSightEndUseRenderDistancePercent} is true.
+	 */
+	public int underwaterSightEndPercent = 50;
+	/**
+	 * FOG_REMAP: darkens biome water fog color. 0 = as-is, 1 = black.
+	 */
+	public float fogTintDarkness = 0.55F;
+	/**
+	 * When true, Ecology distant-water effects turn off while an Iris shader pack is active.
 	 * When false, Ecology keeps applying even with Iris (may conflict).
 	 */
 	public boolean irisAutoDisable = true;
 	public boolean debugLogging = false;
-	/** Paint tagged water tops yellow→blue by distance so marking + fog distance are obvious. */
+	/** Paint marked water faces yellow→blue by distance (opaque-water debug). */
 	public boolean debugHighlightMarkedTops = false;
-	/** Paint tagged water tops green→yellow→red by view angle (fresnel). */
+	/** Paint marked water faces green→yellow→red by view angle (fresnel). */
 	public boolean debugHighlightFresnel = false;
 	/** Paint ANY partial-alpha terrain cyan — proves Ecology terrain.fsh is running at all. */
 	public boolean debugHighlightAllTranslucent = false;
+	/** Fog tint: pink = underwater sight fog / empty-behind mask. */
+	public boolean debugHighlightFogRemap = false;
+	/**
+	 * Fog tint: chat once when Fog tint is selected but Improved Transparency (Fabulous) is off.
+	 */
+	public boolean warnMissingImprovedTransparency = true;
 
-	/** Legacy field from older configs; migrated into {@link #waterShaderEnabled} on load. */
+	/** Legacy master switch; migrated into {@link #distantWaterMode} on load. */
+	private Boolean waterShaderEnabled;
+	/** Legacy field from older configs; migrated into {@link #waterShaderEnabled} then mode. */
 	private Boolean distantWaterOpacityEnabled;
+	/** Legacy FOG_REMAP fractions; ignored after underwaterSight* migration. */
+	@SuppressWarnings("unused")
+	private Float fogTintDistanceStart;
+	@SuppressWarnings("unused")
+	private Float fogTintDistanceEnd;
 
 	private EcologyClientConfig() {
 	}
@@ -79,10 +121,7 @@ public final class EcologyClientConfig {
 				diskJson = Files.readString(PATH);
 				EcologyClientConfig loadedConfig = GSON.fromJson(diskJson, EcologyClientConfig.class);
 				if (loadedConfig != null) {
-					if (loadedConfig.distantWaterOpacityEnabled != null) {
-						loadedConfig.waterShaderEnabled = loadedConfig.distantWaterOpacityEnabled;
-						loadedConfig.distantWaterOpacityEnabled = null;
-					}
+					loadedConfig.migrateLegacyFields(diskJson);
 					instance = loadedConfig;
 				}
 			} catch (Exception e) {
@@ -107,7 +146,10 @@ public final class EcologyClientConfig {
 
 	private static void saveIfChanged() {
 		instance.clamp();
+		instance.waterShaderEnabled = null;
 		instance.distantWaterOpacityEnabled = null;
+		instance.fogTintDistanceStart = null;
+		instance.fogTintDistanceEnd = null;
 		String json = GSON.toJson(instance);
 		if (json.equals(lastSavedJson) && Files.isRegularFile(PATH)) {
 			return;
@@ -127,11 +169,38 @@ public final class EcologyClientConfig {
 		}
 	}
 
-	public boolean isWaterShaderActive() {
-		if (!this.waterShaderEnabled) {
-			return false;
+	/**
+	 * Legacy configs used {@code waterShaderEnabled} / {@code distantWaterOpacityEnabled} without a mode.
+	 * Those map to {@link DistantWaterMode#OPACITY} (or OFF) so existing installs keep opacity until changed.
+	 * New installs (no file) keep default {@link DistantWaterMode#FOG_REMAP}.
+	 */
+	private void migrateLegacyFields(String diskJson) {
+		if (this.distantWaterOpacityEnabled != null && this.waterShaderEnabled == null) {
+			this.waterShaderEnabled = this.distantWaterOpacityEnabled;
 		}
-		return !(this.irisAutoDisable && IrisCompat.isShaderPackInUse());
+		boolean modeInJson = diskJson != null && diskJson.contains("\"distantWaterMode\"");
+		if (!modeInJson) {
+			boolean legacyOn = this.waterShaderEnabled == null || this.waterShaderEnabled;
+			this.distantWaterMode = legacyOn ? DistantWaterMode.OPACITY : DistantWaterMode.OFF;
+		} else if (this.distantWaterMode == null) {
+			this.distantWaterMode = DistantWaterMode.FOG_REMAP;
+		}
+		boolean hasSight = diskJson != null && diskJson.contains("\"underwaterSightEnd\"");
+		if (!hasSight && this.underwaterSightEnd <= 0.0F) {
+			this.underwaterSightStart = 16.0F;
+			this.underwaterSightEnd = 100.0F;
+		}
+	}
+
+	public DistantWaterMode effectiveMode() {
+		DistantWaterMode mode = this.distantWaterMode != null ? this.distantWaterMode : DistantWaterMode.FOG_REMAP;
+		if (mode == DistantWaterMode.OFF) {
+			return DistantWaterMode.OFF;
+		}
+		if (this.irisAutoDisable && IrisCompat.isShaderPackInUse()) {
+			return DistantWaterMode.OFF;
+		}
+		return mode;
 	}
 
 	public float clampedStrength() {
@@ -155,10 +224,41 @@ public final class EcologyClientConfig {
 		return Math.max(0.25F, Math.min(8.0F, this.fresnelPower));
 	}
 
+	public float clampedFogRemapBiasStrength() {
+		return clamp01(this.fogRemapBiasStrength);
+	}
+
+	public float clampedUnderwaterSightStart() {
+		return Math.max(0.0F, Math.min(256.0F, Math.round(this.underwaterSightStart)));
+	}
+
+	/** Block-mode sight end; always &gt;= start + 1. */
+	public float clampedUnderwaterSightEnd() {
+		float start = clampedUnderwaterSightStart();
+		return Math.max(start + 1.0F, Math.min(256.0F, Math.round(this.underwaterSightEnd)));
+	}
+
+	public int clampedUnderwaterSightEndPercent() {
+		return Math.max(1, Math.min(100, this.underwaterSightEndPercent));
+	}
+
+	public float clampedFogTintDarkness() {
+		return clamp01(this.fogTintDarkness);
+	}
+
 	public static void notifyPlayer(String message) {
 		if (!get().debugLogging) {
 			return;
 		}
+		sendChat(message);
+	}
+
+	/** Always send a chat line (ignores debug logging). No-op if not in-game. */
+	public static void notifyPlayerAlways(String message) {
+		sendChat(message);
+	}
+
+	private static void sendChat(String message) {
 		Minecraft client = Minecraft.getInstance();
 		if (client != null && client.player != null) {
 			client.player.sendSystemMessage(Component.literal(message));
@@ -166,11 +266,19 @@ public final class EcologyClientConfig {
 	}
 
 	private void clamp() {
+		if (this.distantWaterMode == null) {
+			this.distantWaterMode = DistantWaterMode.FOG_REMAP;
+		}
 		this.distantWaterOpacityStrength = clamp01(this.distantWaterOpacityStrength);
 		this.distantWaterOpacityStart = clamp01(this.distantWaterOpacityStart);
 		this.distantWaterOpacityEnd = Math.max(this.distantWaterOpacityStart, clamp01(this.distantWaterOpacityEnd));
 		this.fresnelStrength = clamp01(this.fresnelStrength);
 		this.fresnelPower = clampedFresnelPower();
+		this.fogRemapBiasStrength = clamp01(this.fogRemapBiasStrength);
+		this.underwaterSightStart = Math.max(0.0F, Math.min(256.0F, Math.round(this.underwaterSightStart)));
+		this.underwaterSightEnd = Math.max(this.underwaterSightStart + 1.0F, Math.min(256.0F, Math.round(this.underwaterSightEnd)));
+		this.underwaterSightEndPercent = Math.max(1, Math.min(100, this.underwaterSightEndPercent));
+		this.fogTintDarkness = clamp01(this.fogTintDarkness);
 	}
 
 	private static float clamp01(float value) {

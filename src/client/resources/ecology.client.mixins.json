@@ -5,7 +5,12 @@
 	"client": [
 		"FluidRendererMixin",
 		"FogRendererMixin",
-		"MinecraftMixin"
+		"MinecraftMixin",
+		"PostChainMixin",
+		"PostPassMixin",
+		"GameRendererMixin",
+		"LevelRendererMixin",
+		"RenderSystemMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

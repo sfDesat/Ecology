@@ -2,6 +2,7 @@ package com.midas.ecology.client.render;
 
 import com.midas.ecology.EcologyMod;
 import com.midas.ecology.client.compat.IrisCompat;
+import com.midas.ecology.client.config.DistantWaterMode;
 import com.midas.ecology.client.config.EcologyClientConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
@@ -16,15 +17,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Syncs water-surface opacity settings into {@link WaterSurfaceSettingsPack} and
+ * Syncs distant-water settings into {@link WaterSurfaceSettingsPack} and
  * reloads resources only when the effective signature changes (e.g. Iris pack toggle).
  */
 public final class WaterSurfaceShaderSupport {
 	private static final Identifier SETTINGS_ID = Identifier.fromNamespaceAndPath("ecology", "shaders/include/distant_water_settings.glsl");
 	private static final Identifier TERRAIN_FSH = Identifier.fromNamespaceAndPath("minecraft", "shaders/core/terrain.fsh");
+	private static final Identifier TRANSPARENCY_FSH = Identifier.fromNamespaceAndPath("minecraft", "shaders/post/transparency.fsh");
 
 	private static final AtomicReference<String> LAST_SIGNATURE = new AtomicReference<>("");
 	private static final AtomicBoolean RELOAD_SCHEDULED = new AtomicBoolean(false);
+	private static final AtomicBoolean FABULOUS_WARN_SENT = new AtomicBoolean(false);
 	private static int tickCounter;
 	private static boolean loggedResourceCheck;
 
@@ -43,7 +46,9 @@ public final class WaterSurfaceShaderSupport {
 		EcologyClientConfig.ensureLoaded();
 		boolean changed = syncFromConfig(false);
 		logDiagnostics("applyConfigAndReload");
-		EcologyClientConfig.notifyPlayer("Ecology water surface: " + statusSummary());
+		EcologyClientConfig.notifyPlayer("Ecology distant water: " + statusSummary());
+		FABULOUS_WARN_SENT.set(false);
+		maybeWarnMissingFabulous();
 		if (changed) {
 			scheduleReload("configSave");
 		}
@@ -55,10 +60,40 @@ public final class WaterSurfaceShaderSupport {
 		}
 		tickCounter = 0;
 		syncFromConfig(true);
+		maybeWarnMissingFabulous();
 		if (!loggedResourceCheck && Minecraft.getInstance() != null && Minecraft.getInstance().getResourceManager() != null) {
 			loggedResourceCheck = true;
 			logDiagnostics("firstResourceCheck");
 		}
+	}
+
+	/**
+	 * Fog tint needs Fabulous / Improved Transparency. Chat once while the mismatch lasts
+	 * (resets when Fabulous is on, mode changes, or the warn toggle is off).
+	 */
+	public static void maybeWarnMissingFabulous() {
+		EcologyClientConfig config = EcologyClientConfig.get();
+		Minecraft client = Minecraft.getInstance();
+		boolean fogTintSelected = config.distantWaterMode == DistantWaterMode.FOG_REMAP;
+		boolean fabulous = client != null
+			&& client.gameRenderer != null
+			&& client.gameRenderer.gameRenderState().useShaderTransparency();
+		boolean shouldWarn = config.warnMissingImprovedTransparency
+			&& fogTintSelected
+			&& !fabulous
+			&& client != null
+			&& client.player != null;
+
+		if (!shouldWarn) {
+			FABULOUS_WARN_SENT.set(false);
+			return;
+		}
+		if (!FABULOUS_WARN_SENT.compareAndSet(false, true)) {
+			return;
+		}
+		EcologyClientConfig.notifyPlayerAlways(
+			"Ecology Fog tint needs Improved Transparency (Fabulous graphics). Enable it in Video Settings, or switch distant water to Opaque / Off. You can disable this reminder in Ecology → Fog tint."
+		);
 	}
 
 	/**
@@ -68,7 +103,7 @@ public final class WaterSurfaceShaderSupport {
 	 */
 	public static boolean syncFromConfig(boolean reloadIfChanged) {
 		EcologyClientConfig config = EcologyClientConfig.get();
-		boolean active = config.isWaterShaderActive();
+		DistantWaterMode mode = config.effectiveMode();
 		boolean distance = config.distanceOpacityEnabled;
 		float strength = config.clampedStrength();
 		float start = config.clampedStart();
@@ -76,13 +111,22 @@ public final class WaterSurfaceShaderSupport {
 		boolean fresnel = config.fresnelEnabled;
 		float fresnelStrength = config.clampedFresnelStrength();
 		float fresnelPower = config.clampedFresnelPower();
+		float fogRemapBias = config.clampedFogRemapBiasStrength();
+		float underwaterSightStart = config.clampedUnderwaterSightStart();
+		float underwaterSightEnd = config.clampedUnderwaterSightEnd();
+		boolean sightEndUsePercent = config.underwaterSightEndUseRenderDistancePercent;
+		float sightEndPercent = config.clampedUnderwaterSightEndPercent() / 100.0F;
 		boolean highlightTops = config.debugHighlightMarkedTops;
 		boolean highlightFresnel = config.debugHighlightFresnel;
 		boolean highlightAll = config.debugHighlightAllTranslucent;
-		String signature = active + "|" + distance + "|" + strength + "|" + start + "|" + end
+		boolean highlightFogRemap = config.debugHighlightFogRemap;
+		String signature = mode + "|" + distance + "|" + strength + "|" + start + "|" + end
 			+ "|" + fresnel + "|" + fresnelStrength + "|" + fresnelPower
+			+ "|" + fogRemapBias + "|" + underwaterSightStart + "|" + underwaterSightEnd
+			+ "|" + sightEndUsePercent + "|" + sightEndPercent
 			+ "|" + config.irisAutoDisable
-			+ "|" + highlightTops + "|" + highlightFresnel + "|" + highlightAll;
+			+ "|" + highlightTops + "|" + highlightFresnel + "|" + highlightAll
+			+ "|" + highlightFogRemap;
 
 		String previous = LAST_SIGNATURE.get();
 		if (signature.equals(previous)) {
@@ -90,18 +134,21 @@ public final class WaterSurfaceShaderSupport {
 		}
 
 		WaterSurfaceSettingsPack.writeSettings(
-			active, distance, strength, start, end,
-			fresnel, fresnelStrength, fresnelPower,
-			highlightTops, highlightFresnel, highlightAll
+			mode, distance, strength, start, end,
+			fresnel, fresnelStrength, fresnelPower, fogRemapBias,
+			underwaterSightStart, underwaterSightEnd,
+			sightEndUsePercent, sightEndPercent,
+			highlightTops, highlightFresnel, highlightAll,
+			highlightFogRemap
 		);
 		LAST_SIGNATURE.set(signature);
 
 		boolean shouldReload = reloadIfChanged && previous != null && !previous.isEmpty();
 		if (shouldReload) {
-			scheduleReload("signatureChange active=" + active);
-			if (config.debugLogging && (highlightTops || highlightFresnel || highlightAll)) {
+			scheduleReload("signatureChange mode=" + mode);
+			if (config.debugLogging && (highlightTops || highlightFresnel || highlightAll || highlightFogRemap)) {
 				EcologyClientConfig.notifyPlayer(
-					"Ecology debug ON — yellow→blue=distance, green→red=fresnel angle, cyan=any translucent."
+					"Ecology debug ON — yellow→blue=distance, green→red=fresnel, pink=underwater sight fog (Fabulous), cyan=any translucent."
 				);
 			}
 		}
@@ -131,8 +178,8 @@ public final class WaterSurfaceShaderSupport {
 
 	public static String statusSummary() {
 		EcologyClientConfig config = EcologyClientConfig.get();
-		return "active=" + config.isWaterShaderActive()
-			+ " master=" + config.waterShaderEnabled
+		return "mode=" + config.effectiveMode()
+			+ " configured=" + config.distantWaterMode
 			+ " distance=" + config.distanceOpacityEnabled
 			+ " irisAutoDisable=" + config.irisAutoDisable
 			+ " irisPack=" + IrisCompat.isShaderPackInUse()
@@ -142,8 +189,16 @@ public final class WaterSurfaceShaderSupport {
 			+ " fresnel=" + config.fresnelEnabled
 			+ " fresnelStr=" + config.clampedFresnelStrength()
 			+ " fresnelPow=" + config.clampedFresnelPower()
+			+ " fogBias=" + config.clampedFogRemapBiasStrength()
+			+ " sightStart=" + config.clampedUnderwaterSightStart()
+			+ " sightEnd=" + config.clampedUnderwaterSightEnd()
+			+ " sightEndPct=" + (config.underwaterSightEndUseRenderDistancePercent
+				? config.clampedUnderwaterSightEndPercent() + "%"
+				: "off")
+			+ " fogDark=" + config.clampedFogTintDarkness()
 			+ " dbgTops=" + config.debugHighlightMarkedTops
 			+ " dbgFresnel=" + config.debugHighlightFresnel
+			+ " dbgFogRemap=" + config.debugHighlightFogRemap
 			+ " dbgAll=" + config.debugHighlightAllTranslucent
 			+ " packDir=" + Files.isDirectory(WaterSurfaceSettingsPack.packRoot());
 	}
@@ -173,9 +228,13 @@ public final class WaterSurfaceShaderSupport {
 		}
 		Optional<Resource> settings = client.getResourceManager().getResource(SETTINGS_ID);
 		Optional<Resource> terrain = client.getResourceManager().getResource(TERRAIN_FSH);
-		EcologyMod.LOGGER.info("[Ecology WaterSurface] resource present settings.glsl={} terrain.fsh={} settingsSource={}",
+		Optional<Resource> transparency = client.getResourceManager().getResource(TRANSPARENCY_FSH);
+		boolean fabulous = client.gameRenderer != null && client.gameRenderer.gameRenderState().useShaderTransparency();
+		EcologyMod.LOGGER.info("[Ecology WaterSurface] resource present settings.glsl={} terrain.fsh={} transparency.fsh={} fabulous={} settingsSource={}",
 			settings.isPresent(),
 			terrain.isPresent(),
+			transparency.isPresent(),
+			fabulous,
 			settings.map(resource -> {
 				try {
 					return resource.sourcePackId();
@@ -186,7 +245,7 @@ public final class WaterSurfaceShaderSupport {
 		terrain.ifPresent(resource -> {
 			try (var in = resource.open()) {
 				String text = new String(in.readAllBytes(), StandardCharsets.UTF_8);
-				boolean ours = text.contains("EcologyWaterShader") || text.contains("ecologyWaterTop");
+				boolean ours = text.contains("EcologyDistantWaterMode") || text.contains("ecologyWaterFace");
 				EcologyMod.LOGGER.info("[Ecology WaterSurface] terrain.fsh from pack '{}' looks like Ecology override={}", resource.sourcePackId(), ours);
 				if (!ours) {
 					EcologyMod.LOGGER.warn("[Ecology WaterSurface] terrain.fsh is NOT Ecology's — another pack/Sodium may be winning");
@@ -195,6 +254,21 @@ public final class WaterSurfaceShaderSupport {
 				EcologyMod.LOGGER.warn("[Ecology WaterSurface] could not read terrain.fsh contents", e);
 			}
 		});
+		transparency.ifPresent(resource -> {
+			try (var in = resource.open()) {
+				String text = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+				boolean ours = text.contains("EcologyUnderwaterSightEnd") || text.contains("ecologyDecodeWaterMask");
+				EcologyMod.LOGGER.info("[Ecology WaterSurface] transparency.fsh from pack '{}' looks like Ecology override={}", resource.sourcePackId(), ours);
+				if (!ours) {
+					EcologyMod.LOGGER.warn("[Ecology WaterSurface] transparency.fsh is NOT Ecology's — fog tint will not run");
+				}
+			} catch (Exception e) {
+				EcologyMod.LOGGER.warn("[Ecology WaterSurface] could not read transparency.fsh contents", e);
+			}
+		});
+		if (!fabulous && config.distantWaterMode == DistantWaterMode.FOG_REMAP) {
+			EcologyMod.LOGGER.warn("[Ecology WaterSurface] Fog tint needs Improved Transparency (Fabulous). Current graphics will not run the transparency composite.");
+		}
 		if (client.getResourcePackRepository() != null) {
 			boolean selected = client.getResourcePackRepository().getSelectedIds().contains(WaterSurfaceSettingsPack.PACK_ID);
 			boolean available = client.getResourcePackRepository().getAvailableIds().contains(WaterSurfaceSettingsPack.PACK_ID);

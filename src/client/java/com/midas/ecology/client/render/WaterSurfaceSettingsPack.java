@@ -1,6 +1,7 @@
 package com.midas.ecology.client.render;
 
 import com.midas.ecology.EcologyMod;
+import com.midas.ecology.client.config.DistantWaterMode;
 import com.midas.ecology.client.config.EcologyClientConfig;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.chat.Component;
@@ -69,7 +70,7 @@ public final class WaterSurfaceSettingsPack {
 	}
 
 	public static void writeSettings(
-		boolean active,
+		DistantWaterMode mode,
 		boolean distance,
 		float strength,
 		float start,
@@ -77,9 +78,15 @@ public final class WaterSurfaceSettingsPack {
 		boolean fresnel,
 		float fresnelStrength,
 		float fresnelPower,
+		float fogRemapBias,
+		float underwaterSightStart,
+		float underwaterSightEnd,
+		boolean sightEndUsePercent,
+		float sightEndPercent,
 		boolean highlightTops,
 		boolean highlightFresnel,
-		boolean highlightAll
+		boolean highlightAll,
+		boolean highlightFogRemap
 	) {
 		try {
 			Path assets = PACK_ROOT.resolve("assets/ecology/shaders/include");
@@ -87,7 +94,14 @@ public final class WaterSurfaceSettingsPack {
 			Files.writeString(PACK_ROOT.resolve("pack.mcmeta"), packMcmeta(), StandardCharsets.UTF_8);
 			Files.writeString(
 				assets.resolve("distant_water_settings.glsl"),
-				buildSettingsGlsl(active, distance, strength, start, end, fresnel, fresnelStrength, fresnelPower, highlightTops, highlightFresnel, highlightAll),
+				buildSettingsGlsl(
+					mode, distance, strength, start, end,
+					fresnel, fresnelStrength, fresnelPower, fogRemapBias,
+					underwaterSightStart, underwaterSightEnd,
+					sightEndUsePercent, sightEndPercent,
+					highlightTops, highlightFresnel, highlightAll,
+					highlightFogRemap
+				),
 				StandardCharsets.UTF_8
 			);
 		} catch (IOException e) {
@@ -109,7 +123,7 @@ public final class WaterSurfaceSettingsPack {
 	}
 
 	private static String buildSettingsGlsl(
-		boolean active,
+		DistantWaterMode mode,
 		boolean distance,
 		float strength,
 		float start,
@@ -117,11 +131,20 @@ public final class WaterSurfaceSettingsPack {
 		boolean fresnel,
 		float fresnelStrength,
 		float fresnelPower,
+		float fogRemapBias,
+		float underwaterSightStart,
+		float underwaterSightEnd,
+		boolean sightEndUsePercent,
+		float sightEndPercent,
 		boolean highlightTops,
 		boolean highlightFresnel,
-		boolean highlightAll
+		boolean highlightAll,
+		boolean highlightFogRemap
 	) {
+		boolean anyActive = mode != DistantWaterMode.OFF;
 		return """
+			// EcologyDistantWaterMode: 0=OFF 1=OPACITY 2=FOG_REMAP
+			const float EcologyDistantWaterMode = %s;
 			const float EcologyWaterShaderEnabled = %s;
 			const float EcologyDistanceOpacityEnabled = %s;
 			const float EcologyDistanceOpacityStrength = %s;
@@ -130,11 +153,18 @@ public final class WaterSurfaceSettingsPack {
 			const float EcologyFresnelEnabled = %s;
 			const float EcologyFresnelStrength = %s;
 			const float EcologyFresnelPower = %s;
+			const float EcologyFogRemapBiasStrength = %s;
+			const float EcologyUnderwaterSightStart = %s;
+			const float EcologyUnderwaterSightEnd = %s;
+			const float EcologyUnderwaterSightEndUsePercent = %s;
+			const float EcologyUnderwaterSightEndPercent = %s;
 			const float EcologyWaterDebugTops = %s;
 			const float EcologyWaterDebugFresnel = %s;
 			const float EcologyWaterDebugAll = %s;
+			const float EcologyWaterDebugFogRemap = %s;
 			""".formatted(
-			active ? "1.0" : "0.0",
+			formatFloat(mode.shaderValue()),
+			anyActive ? "1.0" : "0.0",
 			distance ? "1.0" : "0.0",
 			formatFloat(strength),
 			formatFloat(start),
@@ -142,9 +172,15 @@ public final class WaterSurfaceSettingsPack {
 			fresnel ? "1.0" : "0.0",
 			formatFloat(fresnelStrength),
 			formatFloat(fresnelPower),
+			formatFloat(fogRemapBias),
+			formatFloat(underwaterSightStart),
+			formatFloat(underwaterSightEnd),
+			sightEndUsePercent ? "1.0" : "0.0",
+			formatFloat(sightEndPercent),
 			highlightTops ? "1.0" : "0.0",
 			highlightFresnel ? "1.0" : "0.0",
-			highlightAll ? "1.0" : "0.0"
+			highlightAll ? "1.0" : "0.0",
+			highlightFogRemap ? "1.0" : "0.0"
 		);
 	}
 
