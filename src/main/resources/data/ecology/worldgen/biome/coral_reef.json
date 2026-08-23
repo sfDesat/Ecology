@@ -81,6 +81,7 @@
     [
       "minecraft:glow_lichen",
       "ecology:coral_reef_dense",
+      "ecology:coral_reef_mound",
       "ecology:coral_reef_rock",
       "ecology:seafloor_fan_reef",
       "ecology:sea_pickle_reef",

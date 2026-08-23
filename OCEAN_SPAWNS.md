@@ -45,7 +45,7 @@ Cold / subarctic; fattest at productive ice margins. Not a warm-water fish.
 ### Tropical Fish
 Warm clear water with structure or grass. Dense on reefs and lagoons; lighter on plain warm shelves.
 
-- Lukewarm Ocean (light), Subtropical Seagrass, Patch Reef (peak), Soft Coral Garden
+- Lukewarm Ocean (light), Subtropical Seagrass, Patch Reef, Soft Coral Garden
 - Warm Ocean (light), Coral Reef (peak), Lagoon, Tropical Seagrass
 
 ### Pufferfish
@@ -69,7 +69,7 @@ Open midwater over shelves and basins. Skip habitats that are too shallow, enclo
 ### Glow Squid
 Deep / dark water stand-in.
 
-- Deep Basin only as an open-ocean presence (peak)
+- Deep Basin peak as `underground_water_creature` (dark water below Y≈30 fills the deep column)
 - Elsewhere only as `underground_water_creature` in flooded caves (implementation)
 
 ### Dolphin
@@ -230,10 +230,10 @@ Green-turtle grazing beds.
 - Glow Squid 2–4 *(underground water only)*
 
 #### Patch Reef
-Scattered coral heads — reef fish + puffers; dolphins at edges.
+Scattered coral heads — reef fish + puffers; dolphins at edges. Thinner schools than warm Coral Reef.
 
-- Tropical Fish 8–8
-- Pufferfish 1–3
+- Tropical Fish 5–8
+- Pufferfish 1–2
 - Squid 1–2
 - Dolphin 1–2
 - Glow Squid 2–4 *(underground water only)*
@@ -298,11 +298,11 @@ Upper blue water — pelagic squid and dolphins; occasional megaschools (require
 - Glow Squid 2–4 *(underground water only)*
 
 #### Deep Basin
-Dark lower column / deep floor — drowned niche (diluted like vanilla); glow squid common; no dolphins / reef fish.
+Dark lower column / deep floor — drowned niche (diluted like vanilla); glow squid common via underground-water rules (dark water below Y≈30 covers the deep column); no dolphins / reef fish.
 
 - Squid 2–4
 - Drowned 1 *(main, diluted + spawn costs)*
-- Glow Squid 4–6 *(open water + underground)*
+- Glow Squid 4–6 *(underground water creature — peak weight/count)*
 - Guardians / Elder Guardians via monuments only
 
 ---
@@ -311,7 +311,7 @@ Dark lower column / deep floor — drowned niche (diluted like vanilla); glow sq
 
 - Counts and biome assignments are implemented in the ocean biome JSON `spawners` blocks.
 - **Drowned only in:** Deep Basin (main), plus rare singles in Sand Wave Field and Kelp Forest. Always diluted with land monsters + `spawn_costs` — never drowned-only `monster` lists.
-- Glow Squid feel common only in Deep Basin open water; elsewhere underground-water only.
+- Glow Squid peak in Deep Basin via `underground_water_creature` (4–6, weight 10); they spawn in dark water below Y≈30, so the deep column reads as open-water bioluminescence. Elsewhere underground-water only at lower counts.
 - Turtles graze Subtropical Seagrass, Tropical Seagrass, and Lagoon; beach nesting stays vanilla land behavior.
 - Cod stays out of lukewarm–warm (outside real range); salmon stays frozen–cold only.
 - Open Ocean megaschools: Cod 18–32 / Salmon 14–28 (weights 3 and 2 vs common Cod weight 8). Requires Ecology cluster-cap mixin — vanilla hard-caps schools at 8.

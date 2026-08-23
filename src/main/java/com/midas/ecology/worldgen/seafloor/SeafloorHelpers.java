@@ -42,6 +42,14 @@ public final class SeafloorHelpers {
 		Blocks.HORN_CORAL_FAN
 	};
 
+	public static final Block[] DEAD_CORAL_FANS = {
+		Blocks.DEAD_TUBE_CORAL_FAN,
+		Blocks.DEAD_BRAIN_CORAL_FAN,
+		Blocks.DEAD_BUBBLE_CORAL_FAN,
+		Blocks.DEAD_FIRE_CORAL_FAN,
+		Blocks.DEAD_HORN_CORAL_FAN
+	};
+
 	private SeafloorHelpers() {
 	}
 
@@ -138,7 +146,11 @@ public final class SeafloorHelpers {
 			|| state.is(Blocks.COBBLESTONE)
 			|| state.is(Blocks.DIRT)
 			|| state.is(Blocks.COARSE_DIRT)
-			|| state.is(Blocks.MOSS_BLOCK);
+			|| state.is(Blocks.MOSS_BLOCK)
+			|| state.is(Blocks.DEEPSLATE)
+			|| state.is(Blocks.BASALT)
+			|| state.is(Blocks.SMOOTH_BASALT)
+			|| state.is(Blocks.BLACKSTONE);
 	}
 
 	public static boolean isSeafloorOrCoral(BlockState state) {
@@ -150,7 +162,11 @@ public final class SeafloorHelpers {
 			|| state.is(Blocks.COBBLESTONE)
 			|| state.is(Blocks.ANDESITE)
 			|| state.is(Blocks.DIORITE)
-			|| state.is(Blocks.GRANITE);
+			|| state.is(Blocks.GRANITE)
+			|| state.is(Blocks.BASALT)
+			|| state.is(Blocks.SMOOTH_BASALT)
+			|| state.is(Blocks.BLACKSTONE)
+			|| state.is(Blocks.DEEPSLATE);
 	}
 
 	public static boolean canReplaceWaterOrAir(BlockState state, boolean water) {
@@ -163,6 +179,11 @@ public final class SeafloorHelpers {
 
 	public static boolean isCoralFan(BlockState state) {
 		for (Block fan : CORAL_FANS) {
+			if (state.is(fan)) {
+				return true;
+			}
+		}
+		for (Block fan : DEAD_CORAL_FANS) {
 			if (state.is(fan)) {
 				return true;
 			}
@@ -212,6 +233,19 @@ public final class SeafloorHelpers {
 		return true;
 	}
 
+	/** Places a waterlogged standing dead (gray) coral fan. */
+	public static boolean tryPlaceDeadFan(WorldGenLevel level, BlockPos fanPos, RandomSource random) {
+		if (!canPlaceFanAt(level, fanPos)) {
+			return false;
+		}
+		BlockState state = randomDeadCoralFan(random).defaultBlockState();
+		if (state.hasProperty(BlockStateProperties.WATERLOGGED)) {
+			state = state.setValue(BlockStateProperties.WATERLOGGED, true);
+		}
+		level.setBlock(fanPos, state, 3);
+		return true;
+	}
+
 	public static Block randomHardCoralBlock(RandomSource random) {
 		return HARD_CORAL_BLOCKS[random.nextInt(HARD_CORAL_BLOCKS.length)];
 	}
@@ -222,5 +256,9 @@ public final class SeafloorHelpers {
 
 	public static Block randomCoralFan(RandomSource random) {
 		return CORAL_FANS[random.nextInt(CORAL_FANS.length)];
+	}
+
+	public static Block randomDeadCoralFan(RandomSource random) {
+		return DEAD_CORAL_FANS[random.nextInt(DEAD_CORAL_FANS.length)];
 	}
 }

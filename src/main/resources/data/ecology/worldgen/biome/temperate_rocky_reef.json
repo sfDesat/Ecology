@@ -80,11 +80,13 @@
     ],
     [
       "minecraft:glow_lichen",
-      "ecology:seagrass_sparse",
       "ecology:rocky_reef_rock_small",
       "ecology:rocky_reef_rock_medium",
       "ecology:rocky_reef_rock_large",
-      "ecology:rocky_reef_rock_spire"
+      "ecology:rocky_reef_rock_spire",
+      "ecology:seafloor_fan_rocky_reef",
+      "ecology:sea_pickle_rocky_reef",
+      "ecology:seagrass_sparse"
     ],
     []
   ],

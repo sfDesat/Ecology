@@ -18,7 +18,7 @@
       }
     },
     "minecraft:visual/sky_color": "#7ba4ff",
-    "minecraft:visual/water_fog_color": "#1a3d4a"
+    "minecraft:visual/water_fog_color": "#163642"
   },
   "carvers": [],
   "downfall": 0.5,
@@ -74,7 +74,7 @@
     ],
     [
       "minecraft:glow_lichen",
-      "ecology:seagrass_very_sparse"
+      "ecology:sand_wave_mound"
     ],
     []
   ],

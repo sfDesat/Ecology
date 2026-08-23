@@ -104,7 +104,8 @@ public final class ColumnIceSystem {
 		return key.equals(Biomes.FROZEN_OCEAN)
 			|| key.equals(EcologyBiomes.SYMPAGIC_ZONE)
 			|| key.equals(EcologyBiomes.ICE_EDGE)
-			|| key.equals(EcologyBiomes.POLYNYA);
+			|| key.equals(EcologyBiomes.POLYNYA)
+			|| key.equals(EcologyBiomes.FROZEN_COASTAL_SHALLOWS);
 	}
 
 	private static IceMode iceMode(Holder<Biome> holder, Biome biome) {
@@ -112,7 +113,9 @@ public final class ColumnIceSystem {
 		if (key == null) {
 			return IceMode.NONE;
 		}
-		if (key.equals(Biomes.FROZEN_OCEAN) || key.equals(EcologyBiomes.SYMPAGIC_ZONE)) {
+		if (key.equals(Biomes.FROZEN_OCEAN)
+			|| key.equals(EcologyBiomes.SYMPAGIC_ZONE)
+			|| key.equals(EcologyBiomes.FROZEN_COASTAL_SHALLOWS)) {
 			return IceMode.PACK;
 		}
 		if (key.equals(EcologyBiomes.ICE_EDGE)) {

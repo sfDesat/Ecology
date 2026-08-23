@@ -66,7 +66,8 @@
       "minecraft:ore_copper",
       "minecraft:underwater_magma",
       "ecology:disk_meadow_sand",
-      "ecology:disk_meadow_clay"
+      "ecology:disk_meadow_clay",
+      "ecology:disk_meadow_blowout"
     ],
     [],
     [

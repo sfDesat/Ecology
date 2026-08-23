@@ -70,13 +70,18 @@
       "minecraft:ore_lapis",
       "minecraft:ore_lapis_buried",
       "minecraft:ore_copper",
-      "minecraft:underwater_magma"
+      "minecraft:underwater_magma",
+      "ecology:disk_deep_basin_gravel",
+      "ecology:disk_deep_basin_rock",
+      "ecology:ocean_rock_tiny"
     ],
     [],
     [
       "minecraft:spring_water"
     ],
-    [],
+    [
+      "ecology:dead_seafloor_fan_sparse"
+    ],
     []
   ],
   "has_precipitation": true,

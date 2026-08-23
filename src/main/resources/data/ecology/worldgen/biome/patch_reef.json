@@ -71,7 +71,8 @@
       "minecraft:underwater_magma",
       "ecology:disk_patch_reef_sand",
       "ecology:disk_rocky_reef_gravel",
-      "ecology:disk_rocky_reef_cobble"
+      "ecology:disk_rocky_reef_cobble",
+      "ecology:disk_coral_rubble"
     ],
     [],
     [
@@ -106,15 +107,15 @@
     "water_ambient": [
       {
         "type": "minecraft:tropical_fish",
-        "minCount": 8,
+        "minCount": 5,
         "maxCount": 8,
-        "weight": 25
+        "weight": 18
       },
       {
         "type": "minecraft:pufferfish",
         "minCount": 1,
-        "maxCount": 3,
-        "weight": 8
+        "maxCount": 2,
+        "weight": 6
       }
     ],
     "water_creature": [

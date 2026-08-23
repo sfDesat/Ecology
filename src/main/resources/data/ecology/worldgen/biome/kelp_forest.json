@@ -82,12 +82,12 @@
     ],
     [
       "minecraft:glow_lichen",
-      "ecology:seagrass_very_sparse",
       "ecology:rocky_reef_rock_small",
       "ecology:rocky_reef_rock_medium",
       "ecology:rocky_reef_rock_large",
       "ecology:rocky_reef_rock_spire",
-      "ecology:kelp_forest_canopy"
+      "ecology:kelp_forest_canopy",
+      "ecology:seagrass_very_sparse"
     ],
     []
   ],

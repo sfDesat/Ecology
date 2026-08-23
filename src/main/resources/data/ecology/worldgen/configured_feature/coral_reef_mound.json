@@ -1,0 +1,15 @@
+{
+  "type": "ecology:coral_reef",
+  "config": {
+    "coral_count": {
+      "type": "minecraft:uniform",
+      "min_inclusive": 8,
+      "max_inclusive": 14
+    },
+    "radius": {
+      "type": "minecraft:uniform",
+      "min_inclusive": 5,
+      "max_inclusive": 8
+    }
+  }
+}

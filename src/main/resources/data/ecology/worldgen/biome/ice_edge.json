@@ -80,7 +80,8 @@
       "minecraft:spring_lava"
     ],
     [
-      "minecraft:glow_lichen"
+      "minecraft:glow_lichen",
+      "ecology:rocky_reef_rock_small"
     ],
     []
   ],

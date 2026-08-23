@@ -65,9 +65,8 @@
       "minecraft:ore_lapis_buried",
       "minecraft:ore_copper",
       "minecraft:underwater_magma",
-      "ecology:disk_warm_sand",
-      "ecology:disk_meadow_sand",
-      "ecology:disk_meadow_clay"
+      "ecology:disk_lagoon_sand",
+      "ecology:disk_meadow_sand"
     ],
     [],
     [
@@ -76,8 +75,9 @@
     ],
     [
       "minecraft:glow_lichen",
-      "ecology:seagrass_lagoon_dense",
-      "ecology:seagrass_lagoon_tall"
+      "ecology:seagrass_lagoon_sparse",
+      "ecology:seagrass_lagoon_tall",
+      "ecology:sea_pickle_sparse"
     ],
     []
   ],

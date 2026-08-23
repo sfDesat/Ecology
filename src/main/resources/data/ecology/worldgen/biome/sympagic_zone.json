@@ -74,8 +74,8 @@
       "ecology:disk_ocean_gravel",
       "ecology:disk_rocky_reef_gravel",
       "ecology:disk_rocky_reef_cobble",
-      "ecology:ocean_rock_tiny",
-      "ecology:rocky_reef_rock_small"
+      "ecology:disk_ice_scrape",
+      "ecology:ocean_rock_tiny"
     ],
     [],
     [
@@ -84,6 +84,7 @@
     ],
     [
       "minecraft:glow_lichen",
+      "ecology:rocky_reef_rock_small",
       "ecology:seafloor_fan_sparse",
       "ecology:sea_pickle_sparse"
     ],
