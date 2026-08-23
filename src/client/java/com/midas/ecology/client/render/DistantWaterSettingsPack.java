@@ -82,7 +82,9 @@ public final class DistantWaterSettingsPack {
 		float underwaterSightStart,
 		float underwaterSightEnd,
 		boolean sightEndUsePercent,
+		float sightStartPercent,
 		float sightEndPercent,
+		float surfaceAirFog,
 		boolean highlightTops,
 		boolean highlightFresnel,
 		boolean highlightAll,
@@ -98,7 +100,8 @@ public final class DistantWaterSettingsPack {
 					mode, distance, strength, start, end,
 					fresnel, fresnelStrength, fresnelPower, fogRemapBias,
 					underwaterSightStart, underwaterSightEnd,
-					sightEndUsePercent, sightEndPercent,
+					sightEndUsePercent, sightStartPercent, sightEndPercent,
+					surfaceAirFog,
 					highlightTops, highlightFresnel, highlightAll,
 					highlightFogRemap
 				),
@@ -135,7 +138,9 @@ public final class DistantWaterSettingsPack {
 		float underwaterSightStart,
 		float underwaterSightEnd,
 		boolean sightEndUsePercent,
+		float sightStartPercent,
 		float sightEndPercent,
+		float surfaceAirFog,
 		boolean highlightTops,
 		boolean highlightFresnel,
 		boolean highlightAll,
@@ -157,11 +162,13 @@ public final class DistantWaterSettingsPack {
 			const float EcologyUnderwaterSightStart = %s;
 			const float EcologyUnderwaterSightEnd = %s;
 			const float EcologyUnderwaterSightEndUsePercent = %s;
+			const float EcologyUnderwaterSightStartPercent = %s;
 			const float EcologyUnderwaterSightEndPercent = %s;
 			const float EcologyWaterDebugTops = %s;
 			const float EcologyWaterDebugFresnel = %s;
 			const float EcologyWaterDebugAll = %s;
 			const float EcologyWaterDebugFogRemap = %s;
+			const float EcologySurfaceAirFog = %s;
 			""".formatted(
 			formatFloat(mode.shaderValue()),
 			anyActive ? "1.0" : "0.0",
@@ -176,11 +183,13 @@ public final class DistantWaterSettingsPack {
 			formatFloat(underwaterSightStart),
 			formatFloat(underwaterSightEnd),
 			sightEndUsePercent ? "1.0" : "0.0",
+			formatFloat(sightStartPercent),
 			formatFloat(sightEndPercent),
 			highlightTops ? "1.0" : "0.0",
 			highlightFresnel ? "1.0" : "0.0",
 			highlightAll ? "1.0" : "0.0",
-			highlightFogRemap ? "1.0" : "0.0"
+			highlightFogRemap ? "1.0" : "0.0",
+			formatFloat(surfaceAirFog)
 		);
 	}
 

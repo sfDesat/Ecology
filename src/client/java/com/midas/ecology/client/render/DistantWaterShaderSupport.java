@@ -115,15 +115,18 @@ public final class DistantWaterShaderSupport {
 		float underwaterSightStart = config.clampedUnderwaterSightStart();
 		float underwaterSightEnd = config.clampedUnderwaterSightEnd();
 		boolean sightEndUsePercent = config.underwaterSightEndUseRenderDistancePercent;
+		float sightStartPercent = config.clampedUnderwaterSightStartPercent() / 100.0F;
 		float sightEndPercent = config.clampedUnderwaterSightEndPercent() / 100.0F;
 		boolean highlightTops = config.debugHighlightMarkedTops;
 		boolean highlightFresnel = config.debugHighlightFresnel;
 		boolean highlightAll = config.debugHighlightAllTranslucent;
 		boolean highlightFogRemap = config.debugHighlightFogRemap;
+		float surfaceAirFog = config.clampedSurfaceAirFog();
 		String signature = mode + "|" + distance + "|" + strength + "|" + start + "|" + end
 			+ "|" + fresnel + "|" + fresnelStrength + "|" + fresnelPower
 			+ "|" + fogRemapBias + "|" + underwaterSightStart + "|" + underwaterSightEnd
-			+ "|" + sightEndUsePercent + "|" + sightEndPercent
+			+ "|" + sightEndUsePercent + "|" + sightStartPercent + "|" + sightEndPercent
+			+ "|" + surfaceAirFog
 			+ "|" + config.irisAutoDisable
 			+ "|" + highlightTops + "|" + highlightFresnel + "|" + highlightAll
 			+ "|" + highlightFogRemap;
@@ -137,7 +140,8 @@ public final class DistantWaterShaderSupport {
 			mode, distance, strength, start, end,
 			fresnel, fresnelStrength, fresnelPower, fogRemapBias,
 			underwaterSightStart, underwaterSightEnd,
-			sightEndUsePercent, sightEndPercent,
+			sightEndUsePercent, sightStartPercent, sightEndPercent,
+			surfaceAirFog,
 			highlightTops, highlightFresnel, highlightAll,
 			highlightFogRemap
 		);
@@ -192,10 +196,18 @@ public final class DistantWaterShaderSupport {
 			+ " fogBias=" + config.clampedFogRemapBiasStrength()
 			+ " sightStart=" + config.clampedUnderwaterSightStart()
 			+ " sightEnd=" + config.clampedUnderwaterSightEnd()
-			+ " sightEndPct=" + (config.underwaterSightEndUseRenderDistancePercent
-				? config.clampedUnderwaterSightEndPercent() + "%"
+			+ " sightPct=" + (config.underwaterSightEndUseRenderDistancePercent
+				? config.clampedUnderwaterSightStartPercent() + "-" + config.clampedUnderwaterSightEndPercent() + "%"
 				: "off")
 			+ " fogDark=" + config.clampedFogTintDarkness()
+			+ " surfaceFog=" + config.clampedSurfaceAirFog()
+			+ " uwLight=" + config.clampedUnderwaterLightStart() + "-" + config.clampedUnderwaterLightEnd()
+			+ " uwFogEnd=" + config.clampedUnderwaterFogEnd()
+			+ " swimFog=" + config.swimFogKelpCanopy + "/" + config.swimFogColdPolarShelf
+			+ "/" + config.swimFogTemperateShelf + "/" + config.swimFogIceOpenings
+			+ "/" + config.swimFogSubtropical + "/" + config.swimFogDeepBasin
+			+ "/" + config.swimFogTropicalClear + "/" + config.swimFogLagoon
+			+ "/" + config.swimFogOpenOcean
 			+ " dbgTops=" + config.debugHighlightMarkedTops
 			+ " dbgFresnel=" + config.debugHighlightFresnel
 			+ " dbgFogRemap=" + config.debugHighlightFogRemap

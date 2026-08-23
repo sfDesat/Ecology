@@ -75,9 +75,12 @@ float ecologyAirFogAmount(vec3 fogPos) {
 }
 
 float ecologyUnderwaterSightFog(float viewDist) {
-    float sightStart = EcologyUnderwaterSightStart;
+    float rd = max(FogRenderDistanceEnd, 1.0);
+    float sightStart = EcologyUnderwaterSightEndUsePercent > 0.5
+        ? rd * clamp(EcologyUnderwaterSightStartPercent, 0.0, 1.0)
+        : EcologyUnderwaterSightStart;
     float sightEndBlocks = EcologyUnderwaterSightEndUsePercent > 0.5
-        ? max(FogRenderDistanceEnd, 1.0) * clamp(EcologyUnderwaterSightEndPercent, 0.0, 1.0)
+        ? rd * clamp(EcologyUnderwaterSightEndPercent, 0.0, 1.0)
         : EcologyUnderwaterSightEnd;
     // Always at least start + 1 block.
     float sightEnd = max(sightEndBlocks, sightStart + 1.0);
@@ -142,6 +145,12 @@ void main() {
             float pinkAmt = emptyBehind ? max(cover, 0.85) : cover * max(sightFog, airness * 0.35);
             mainRgb = mix(mainRgb, vec3(1.0, 0.15, 0.95), clamp(pinkAmt, 0.0, 1.0));
         }
+
+        // Air fog on the water surface, as if the face were an opaque land block.
+        vec3 surfacePos = ecologyFogPosFromDepth(translucentDepth);
+        float surfaceFog = ecologyAirFogAmount(surfacePos) * FogColor.a * clamp(EcologySurfaceAirFog, 0.0, 1.0);
+        translucent.a = mix(translucent.a, 1.0, surfaceFog);
+        translucent.rgb = mix(translucent.rgb, FogColor.rgb, surfaceFog);
     }
 
     color_layers[0] = vec4(mainRgb, 1.0);

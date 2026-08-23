@@ -26,20 +26,44 @@ public final class EcologyConfigScreen {
 
 		ConfigEntryBuilder entries = builder.entryBuilder();
 
+		addGeneral(builder, entries, config);
+		addLookingAtWater(builder, entries, config);
+		addSwimming(builder, entries, config);
+		addOpaqueWater(builder, entries, config);
+
+		return builder.build();
+	}
+
+	private static void addGeneral(ConfigBuilder builder, ConfigEntryBuilder entries, EcologyClientConfig config) {
 		ConfigCategory general = builder.getOrCreateCategory(Component.literal("General"));
+		general.addEntry(entries.startTextDescription(Component.literal(
+			"Pick how Ecology draws distant oceans. Fog tint is the default. Opaque water is a simpler fallback. Off is vanilla water."
+		)).build());
 		general.addEntry(entries.startEnumSelector(Component.literal("Distant water system"), DistantWaterMode.class, config.distantWaterMode)
 			.setDefaultValue(DistantWaterMode.FOG_REMAP)
 			.setEnumNameProvider(mode -> Component.literal(((DistantWaterMode) mode).label()))
 			.setTooltip(Component.literal(
-				"Off = vanilla (all Ecology distant-water effects + their debug off). Opaque water = raise water alpha (no Fabulous needed). Fog tint = unfog air fog behind water, then fixed underwater sight fog (needs Fabulous / Improved Transparency)."
+				"Fog tint (default): from above water, hide the pale basin outline and fade the seafloor into water fog. Needs Fabulous / Improved Transparency.\n"
+					+ "Opaque water: make far water less see-through. No Fabulous needed. Ignored if Fog tint is selected.\n"
+					+ "Off: vanilla water; all Ecology distant-water effects off."
 			))
 			.setSaveConsumer(value -> config.distantWaterMode = value)
 			.build());
 		general.addEntry(entries.startBooleanToggle(Component.literal("Auto-disable with Iris shader packs"), config.irisAutoDisable)
 			.setDefaultValue(true)
-			.setTooltip(Component.literal("When on, Ecology distant-water effects turn off while an Iris pack is active."))
+			.setTooltip(Component.literal(
+				"When on, Ecology distant-water and swimming visuals turn off while an Iris pack is active, so the pack can draw water itself."
+			))
 			.setSaveConsumer(value -> config.irisAutoDisable = value)
 			.build());
+		general.addEntry(entries.startBooleanToggle(Component.literal("Warn if Improved Transparency is off"), config.warnMissingImprovedTransparency)
+			.setDefaultValue(true)
+			.setTooltip(Component.literal(
+				"Chat reminder when Fog tint is selected but Fabulous / Improved Transparency is off. Fog tint cannot run without it."
+			))
+			.setSaveConsumer(value -> config.warnMissingImprovedTransparency = value)
+			.build());
+		general.addEntry(entries.startTextDescription(Component.literal("—— Debug ——")).build());
 		general.addEntry(entries.startBooleanToggle(Component.literal("Debug logging / chat status"), config.debugLogging)
 			.setDefaultValue(false)
 			.setTooltip(Component.literal("Logs distant-water status and prints a short summary to chat when config applies."))
@@ -47,79 +71,197 @@ public final class EcologyConfigScreen {
 			.build());
 		general.addEntry(entries.startBooleanToggle(Component.literal("Highlight all translucent (cyan)"), config.debugHighlightAllTranslucent)
 			.setDefaultValue(false)
-			.setTooltip(Component.literal("Paints ice/glass/water cyan. If NOTHING changes, Ecology core/terrain.fsh is not running (e.g. Sodium)."))
+			.setTooltip(Component.literal(
+				"Paints ice, glass, and water cyan. If nothing changes, Ecology’s terrain shader is not running (e.g. Sodium replacing it)."
+			))
 			.setSaveConsumer(value -> config.debugHighlightAllTranslucent = value)
 			.build());
+	}
 
-		ConfigCategory fog = builder.getOrCreateCategory(Component.literal("Fog tint"));
+	private static void addLookingAtWater(ConfigBuilder builder, ConfigEntryBuilder entries, EcologyClientConfig config) {
+		ConfigCategory fog = builder.getOrCreateCategory(Component.literal("Looking at water"));
 		fog.addEntry(entries.startTextDescription(Component.literal(
-			"Requires Fabulous / Improved Transparency. Strips air fog behind water, then fades the seafloor into water fog over a sight range. End is always at least start + 1 block."
+			"These settings apply while you are ABOVE water, looking at the ocean. They need Distant water system = Fog tint, and Fabulous / Improved Transparency. They do not affect swimming."
 		)).build());
-		fog.addEntry(entries.startIntField(Component.literal("Underwater sight start (blocks)"), Math.round(config.underwaterSightStart))
-			.setDefaultValue(16)
-			.setMin(0)
-			.setMax(256)
-			.setTooltip(Component.literal("Distance where custom underwater fog begins (behind water, from camera)."))
-			.setSaveConsumer(value -> config.underwaterSightStart = value)
-			.build());
-		fog.addEntry(entries.startBooleanToggle(Component.literal("Sight end uses % of render distance"), config.underwaterSightEndUseRenderDistancePercent)
-			.setDefaultValue(false)
-			.setTooltip(Component.literal(
-				"Off = sight end is a fixed block distance. On = sight end is a percent of fog render distance (scales with your render distance)."
-			))
-			.setSaveConsumer(value -> config.underwaterSightEndUseRenderDistancePercent = value)
-			.build());
-		fog.addEntry(entries.startIntField(Component.literal("Underwater sight end (blocks)"), Math.round(config.underwaterSightEnd))
-			.setDefaultValue(128)
-			.setMin(1)
-			.setMax(256)
-			.setTooltip(Component.literal("Used when “% of render distance” is off. Effective end is always at least start + 1."))
-			.setSaveConsumer(value -> config.underwaterSightEnd = value)
-			.build());
-		fog.addEntry(entries.startIntField(Component.literal("Underwater sight end (% of render distance)"), config.underwaterSightEndPercent)
-			.setDefaultValue(50)
-			.setMin(1)
-			.setMax(100)
-			.setTooltip(Component.literal("Used when “% of render distance” is on. Effective end in blocks is max(start + 1, renderDistance × percent / 100)."))
-			.setSaveConsumer(value -> config.underwaterSightEndPercent = value)
-			.build());
-		fog.addEntry(entries.startFloatField(Component.literal("Underwater fog strength (0-1)"), config.fogRemapBiasStrength)
+		fog.addEntry(entries.startFloatField(Component.literal("Horizon fog on the surface (0-1)"), config.surfaceAirFog)
 			.setDefaultValue(1.0F)
 			.setMin(0.0F)
 			.setMax(1.0F)
-			.setTooltip(Component.literal("How hard underwater sight fog and empty-sky fill apply."))
+			.setTooltip(Component.literal(
+				"How strongly distant water picks up the same white air fog as land. 1 = water and land fade together at the horizon. 0 = water surface stays fogless (old Fog tint look)."
+			))
+			.setSaveConsumer(value -> config.surfaceAirFog = value)
+			.build());
+		fog.addEntry(entries.startTextDescription(Component.literal(
+			"See-through: how far you can look into the water before the seafloor fades into biome water fog (the pale-basin fix)."
+		)).build());
+		fog.addEntry(entries.startBooleanToggle(Component.literal("See-through distances use % of render distance"), config.underwaterSightEndUseRenderDistancePercent)
+			.setDefaultValue(true)
+			.setTooltip(Component.literal(
+				"On (default): start and end both scale with your render distance. Off: use fixed block distances instead."
+			))
+			.setSaveConsumer(value -> config.underwaterSightEndUseRenderDistancePercent = value)
+			.build());
+		fog.addEntry(entries.startIntField(Component.literal("See-through start (% of render distance)"), config.underwaterSightStartPercent)
+			.setDefaultValue(10)
+			.setMin(0)
+			.setMax(99)
+			.setTooltip(Component.literal(
+				"Used when “% of render distance” is on. Distance where water-fog fill begins. Always kept below end."
+			))
+			.setSaveConsumer(value -> config.underwaterSightStartPercent = value)
+			.build());
+		fog.addEntry(entries.startIntField(Component.literal("See-through end (% of render distance)"), config.underwaterSightEndPercent)
+			.setDefaultValue(70)
+			.setMin(1)
+			.setMax(100)
+			.setTooltip(Component.literal(
+				"Used when “% of render distance” is on. Distance where water-fog fill is full. Effective end is always at least start + 1 block."
+			))
+			.setSaveConsumer(value -> config.underwaterSightEndPercent = value)
+			.build());
+		fog.addEntry(entries.startIntField(Component.literal("See-through start (blocks)"), Math.round(config.underwaterSightStart))
+			.setDefaultValue(16)
+			.setMin(0)
+			.setMax(256)
+			.setTooltip(Component.literal(
+				"Used when “% of render distance” is off. Distance from the camera where water-fog fill begins. Close water stays clear."
+			))
+			.setSaveConsumer(value -> config.underwaterSightStart = value)
+			.build());
+		fog.addEntry(entries.startIntField(Component.literal("See-through end (blocks)"), Math.round(config.underwaterSightEnd))
+			.setDefaultValue(128)
+			.setMin(1)
+			.setMax(256)
+			.setTooltip(Component.literal(
+				"Used when “% of render distance” is off. Distance where water-fog fill is full. Always at least start + 1."
+			))
+			.setSaveConsumer(value -> config.underwaterSightEnd = value)
+			.build());
+		fog.addEntry(entries.startFloatField(Component.literal("Water fill strength (0-1)"), config.fogRemapBiasStrength)
+			.setDefaultValue(1.0F)
+			.setMin(0.0F)
+			.setMax(1.0F)
+			.setTooltip(Component.literal(
+				"How hard the seafloor fades into water fog, and how hard empty sky behind water is filled. 0 = off, 1 = full."
+			))
 			.setSaveConsumer(value -> config.fogRemapBiasStrength = value)
 			.build());
 		fog.addEntry(entries.startFloatField(Component.literal("Water fog darkness (0-1)"), config.fogTintDarkness)
 			.setDefaultValue(0.55F)
 			.setMin(0.0F)
 			.setMax(1.0F)
-			.setTooltip(Component.literal("Darkens biome water fog color. 0 = as-is, 1 = black. Used for sight fog and empty fill."))
+			.setTooltip(Component.literal(
+				"Darkens the biome water fog color used for that fill. 0 = biome color as-is, 1 = black."
+			))
 			.setSaveConsumer(value -> config.fogTintDarkness = value)
 			.build());
-		fog.addEntry(entries.startBooleanToggle(Component.literal("Warn if Improved Transparency is off"), config.warnMissingImprovedTransparency)
-			.setDefaultValue(true)
-			.setTooltip(Component.literal(
-				"When Fog tint is selected but graphics Improved Transparency (Fabulous) is off, send a chat reminder. Fog tint needs that setting."
-			))
-			.setSaveConsumer(value -> config.warnMissingImprovedTransparency = value)
-			.build());
 		fog.addEntry(entries.startTextDescription(Component.literal("—— Debug ——")).build());
-		fog.addEntry(entries.startBooleanToggle(Component.literal("Highlight underwater fog (pink)"), config.debugHighlightFogRemap)
+		fog.addEntry(entries.startBooleanToggle(Component.literal("Highlight see-through fog (pink)"), config.debugHighlightFogRemap)
 			.setDefaultValue(false)
 			.setTooltip(Component.literal(
-				"Pink tracks underwater sight fog / empty-behind fill. Requires Fabulous. Save config to reload."
+				"Pink where see-through water fog / empty-behind fill is applying. Needs Fabulous. Save config to reload."
 			))
 			.setSaveConsumer(value -> config.debugHighlightFogRemap = value)
 			.build());
+	}
 
+	private static void addSwimming(ConfigBuilder builder, ConfigEntryBuilder entries, EcologyClientConfig config) {
+		ConfigCategory underwater = builder.getOrCreateCategory(Component.literal("Swimming"));
+		underwater.addEntry(entries.startTextDescription(Component.literal(
+			"These settings apply while YOU are underwater. They do not change mob spawning. They turn off when Auto-disable with Iris is on and a pack is active."
+		)).build());
+		underwater.addEntry(entries.startTextDescription(Component.literal(
+			"Brightness: vanilla oceans go cave-dark after about 15 blocks of water above you. Ecology keeps extra light until the depths below."
+		)).build());
+		underwater.addEntry(entries.startIntField(Component.literal("Stay bright until (blocks of water above you)"), Math.round(config.underwaterLightStart))
+			.setDefaultValue(10)
+			.setMin(0)
+			.setMax(256)
+			.setTooltip(Component.literal(
+				"How much water can sit above you before extra brightness starts fading. Shallower than this stays closer to surface lighting."
+			))
+			.setSaveConsumer(value -> config.underwaterLightStart = value)
+			.build());
+		underwater.addEntry(entries.startIntField(Component.literal("Fully dark at (blocks of water above you)"), Math.round(config.underwaterLightEnd))
+			.setDefaultValue(64)
+			.setMin(1)
+			.setMax(256)
+			.setTooltip(Component.literal(
+				"How much water above you before extra brightness is gone and vanilla darkness wins. Always at least start + 1."
+			))
+			.setSaveConsumer(value -> config.underwaterLightEnd = value)
+			.build());
+		underwater.addEntry(entries.startTextDescription(Component.literal(
+			"View distance: how far you can see while swimming, by water type. Vanilla water fog is short and also fades in over time; Ecology replaces that with these block distances. They do not scale with render distance."
+		)).build());
+		underwater.addEntry(entries.startFloatField(Component.literal("Region fade (seconds)"), config.swimFogFadeSeconds)
+			.setDefaultValue(1.0F)
+			.setMin(0.0F)
+			.setMax(5.0F)
+			.setTooltip(Component.literal(
+				"How long swim view distance takes to change when you move into a different water type. 0 = instant. Does not fade when you get in or out of water."
+			))
+			.setSaveConsumer(value -> config.swimFogFadeSeconds = value)
+			.build());
+		addSwimFogField(underwater, entries, "Kelp canopy", config.swimFogKelpCanopy, 26,
+			"Kelp Forest. Shortest vis — canopy and particles.",
+			value -> config.swimFogKelpCanopy = value);
+		addSwimFogField(underwater, entries, "Cold / polar shelf", config.swimFogColdPolarShelf, 30,
+			"Frozen Ocean, Sympagic Zone, Cold Ocean, Cold Eelgrass. Nutrient-rich green-grey water.",
+			value -> config.swimFogColdPolarShelf = value);
+		addSwimFogField(underwater, entries, "Temperate shelf", config.swimFogTemperateShelf, 34,
+			"Ocean, Seagrass Meadow, Temperate Rocky Reef, Sand Wave Field.",
+			value -> config.swimFogTemperateShelf = value);
+		addSwimFogField(underwater, entries, "Ice openings", config.swimFogIceOpenings, 38,
+			"Ice Edge and Polynya. Cold-clear openings in the pack.",
+			value -> config.swimFogIceOpenings = value);
+		addSwimFogField(underwater, entries, "Subtropical", config.swimFogSubtropical, 40,
+			"Lukewarm Ocean, Subtropical Seagrass, Patch Reef, Soft Coral Garden.",
+			value -> config.swimFogSubtropical = value);
+		addSwimFogField(underwater, entries, "Deep basin", config.swimFogDeepBasin, 42,
+			"Deep Basin. Fairly clean water, but dark — vis dies from light, not silt.",
+			value -> config.swimFogDeepBasin = value);
+		addSwimFogField(underwater, entries, "Tropical clear", config.swimFogTropicalClear, 46,
+			"Warm Ocean, Coral Reef, Tropical Seagrass.",
+			value -> config.swimFogTropicalClear = value);
+		addSwimFogField(underwater, entries, "Lagoon", config.swimFogLagoon, 50,
+			"Lagoon. Glass-clear sand shallows; often clearer than the reef.",
+			value -> config.swimFogLagoon = value);
+		addSwimFogField(underwater, entries, "Open ocean", config.swimFogOpenOcean, 50,
+			"Open Ocean (upper pelagic). Longest swim vis. Drops to Deep basin when you go deeper.",
+			value -> config.swimFogOpenOcean = value);
+		addSwimFogField(underwater, entries, "Other water (rivers, lakes)", config.underwaterFogEnd, 24,
+			"Rivers, lakes, and any biome not listed above.",
+			value -> config.underwaterFogEnd = value);
+	}
+
+	private static void addSwimFogField(
+		ConfigCategory category,
+		ConfigEntryBuilder entries,
+		String name,
+		float value,
+		int defaultValue,
+		String tooltip,
+		java.util.function.IntConsumer save
+	) {
+		category.addEntry(entries.startIntField(Component.literal(name), Math.round(value))
+			.setDefaultValue(defaultValue)
+			.setMin(8)
+			.setMax(256)
+			.setTooltip(Component.literal(tooltip))
+			.setSaveConsumer(save::accept)
+			.build());
+	}
+
+	private static void addOpaqueWater(ConfigBuilder builder, ConfigEntryBuilder entries, EcologyClientConfig config) {
 		ConfigCategory opaque = builder.getOrCreateCategory(Component.literal("Opaque water"));
 		opaque.addEntry(entries.startTextDescription(Component.literal(
-			"Makes distant water less see-through. Does not need Fabulous. Ignored when Fog tint mode is selected."
+			"Fallback when Distant water system is Opaque water. Makes far water less see-through. Does not need Fabulous. Ignored while Fog tint is selected."
 		)).build());
 		opaque.addEntry(entries.startBooleanToggle(Component.literal("Distance opacity"), config.distanceOpacityEnabled)
 			.setDefaultValue(true)
-			.setTooltip(Component.literal("Distance-based opacity. Turn off to test fresnel alone."))
+			.setTooltip(Component.literal("Fade water toward opaque with distance. Turn off to test angle (fresnel) alone."))
 			.setSaveConsumer(value -> config.distanceOpacityEnabled = value)
 			.build());
 		opaque.addEntry(entries.startFloatField(Component.literal("Distance strength (0-1)"), config.distantWaterOpacityStrength)
@@ -129,14 +271,14 @@ public final class EcologyConfigScreen {
 			.setTooltip(Component.literal("At End distance: 1.0 = fully opaque from distance alone."))
 			.setSaveConsumer(value -> config.distantWaterOpacityStrength = value)
 			.build());
-		opaque.addEntry(entries.startFloatField(Component.literal("Start distance (0-1)"), config.distantWaterOpacityStart)
+		opaque.addEntry(entries.startFloatField(Component.literal("Start distance (0-1 of render distance)"), config.distantWaterOpacityStart)
 			.setDefaultValue(0.0F)
 			.setMin(0.0F)
 			.setMax(1.0F)
-			.setTooltip(Component.literal("Where distance opacity begins, as a fraction of render-distance fog end."))
+			.setTooltip(Component.literal("Where distance opacity begins, as a fraction of render-distance fog end. 0 = starts at the camera."))
 			.setSaveConsumer(value -> config.distantWaterOpacityStart = value)
 			.build());
-		opaque.addEntry(entries.startFloatField(Component.literal("End distance (0-1)"), config.distantWaterOpacityEnd)
+		opaque.addEntry(entries.startFloatField(Component.literal("End distance (0-1 of render distance)"), config.distantWaterOpacityEnd)
 			.setDefaultValue(0.5F)
 			.setMin(0.0F)
 			.setMax(1.0F)
@@ -145,21 +287,21 @@ public final class EcologyConfigScreen {
 			.build());
 		opaque.addEntry(entries.startBooleanToggle(Component.literal("Fresnel (angle opacity)"), config.fresnelEnabled)
 			.setDefaultValue(true)
-			.setTooltip(Component.literal("Adds glancing-angle opacity. Combined with distance, capped at 1."))
+			.setTooltip(Component.literal("Adds extra opacity when looking across the water (glancing angle). Combined with distance, capped at 1."))
 			.setSaveConsumer(value -> config.fresnelEnabled = value)
 			.build());
 		opaque.addEntry(entries.startFloatField(Component.literal("Fresnel strength (0-1)"), config.fresnelStrength)
 			.setDefaultValue(1.0F)
 			.setMin(0.0F)
 			.setMax(1.0F)
-			.setTooltip(Component.literal("How much glancing-angle opacity to ADD. Total with distance is clamped to 1."))
+			.setTooltip(Component.literal("How much glancing-angle opacity to add. Total with distance is clamped to 1."))
 			.setSaveConsumer(value -> config.fresnelStrength = value)
 			.build());
 		opaque.addEntry(entries.startFloatField(Component.literal("Fresnel power / angle curve (0.25-8)"), config.fresnelPower)
 			.setDefaultValue(0.75F)
 			.setMin(0.25F)
 			.setMax(8.0F)
-			.setTooltip(Component.literal("pow(grazing, power). Lower = more angles get opaque. Higher = only near-horizon."))
+			.setTooltip(Component.literal("Lower = more view angles get opaque. Higher = only near the horizon."))
 			.setSaveConsumer(value -> config.fresnelPower = value)
 			.build());
 		opaque.addEntry(entries.startTextDescription(Component.literal("—— Debug ——")).build());
@@ -173,7 +315,5 @@ public final class EcologyConfigScreen {
 			.setTooltip(Component.literal("Green = looking down, red = horizon."))
 			.setSaveConsumer(value -> config.debugHighlightFresnel = value)
 			.build());
-
-		return builder.build();
 	}
 }

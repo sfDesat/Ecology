@@ -1,5 +1,6 @@
 package com.midas.ecology.client.mixin;
 
+import com.midas.ecology.client.render.UnderwaterLighting;
 import com.midas.ecology.client.render.fog.FogUboLayout;
 import com.midas.ecology.client.render.fog.FogUboState;
 import net.minecraft.client.renderer.fog.FogData;
@@ -53,16 +54,23 @@ public class FogRendererMixin {
 		float cloudEnd,
 		CallbackInfo ci
 	) {
+		float[] envFog = UnderwaterLighting.stretchEnvironmentalFog(environmentalStart, environmentalEnd);
+		float sky = skyEnd;
+		float cloud = cloudEnd;
+		if (UnderwaterLighting.shouldApply()) {
+			sky = envFog[1];
+			cloud = envFog[1];
+		}
 		FogUboLayout.write(
 			buffer,
 			offset,
 			color,
-			environmentalStart,
-			environmentalEnd,
+			envFog[0],
+			envFog[1],
 			renderDistanceStart,
 			renderDistanceEnd,
-			skyEnd,
-			cloudEnd,
+			sky,
+			cloud,
 			FogUboState.waterFogColor(),
 			FogUboState.cameraUnderwater()
 		);
