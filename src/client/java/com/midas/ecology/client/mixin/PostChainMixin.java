@@ -14,7 +14,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
 /**
- * Only the Fabulous {@code transparency} pass declares Fog + FogTint UBOs.
+ * Only the Fabulous {@code transparency} pass declares Fog + Fog tint UBOs.
+ * {@code ordinal = 0} is the first {@code withBindGroupLayout} while building that pass.
  */
 @Mixin(PostChain.class)
 public class PostChainMixin {

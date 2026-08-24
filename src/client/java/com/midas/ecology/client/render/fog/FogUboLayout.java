@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 /**
  * Single source of truth for the Ecology-extended Fog UBO.
  * Must stay in sync with {@code assets/minecraft/shaders/include/fog.glsl}.
+ * Sodium {@code u_Globals} extras use {@link #appendExtras} in the same field order.
  * <p>
  * Layout:
  * <pre>
@@ -34,6 +35,12 @@ public final class FogUboLayout {
 		.putFloat()
 		.get();
 
+	/** std140 size of the Ecology tail (vec4 + float) appended to Sodium {@code u_Globals}. */
+	public static final int SODIUM_EXTRAS_SIZE = new Std140SizeCalculator()
+		.putVec4()
+		.putFloat()
+		.get();
+
 	private FogUboLayout() {
 	}
 
@@ -55,15 +62,19 @@ public final class FogUboLayout {
 		float cameraUnderwater
 	) {
 		buffer.position(offset);
-		Std140Builder.intoBuffer(buffer)
+		Std140Builder builder = Std140Builder.intoBuffer(buffer)
 			.putVec4(fogColor)
 			.putFloat(environmentalStart)
 			.putFloat(environmentalEnd)
 			.putFloat(renderDistanceStart)
 			.putFloat(renderDistanceEnd)
 			.putFloat(skyEnd)
-			.putFloat(cloudEnd)
-			.putVec4(waterFogColor)
-			.putFloat(cameraUnderwater);
+			.putFloat(cloudEnd);
+		appendExtras(builder, waterFogColor, cameraUnderwater);
+	}
+
+	/** Appends Ecology water-fog extras. Order must match {@code fog.glsl} and Sodium {@code globals.glsl}. */
+	public static void appendExtras(Std140Builder builder, Vector4fc waterFogColor, float cameraUnderwater) {
+		builder.putVec4(waterFogColor).putFloat(cameraUnderwater);
 	}
 }

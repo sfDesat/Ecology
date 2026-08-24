@@ -6,7 +6,7 @@ package com.midas.ecology.client.config;
  * Display names are for the config UI; JSON still uses the enum constant names.
  */
 public enum DistantWaterMode {
-	/** Vanilla water; Ecology distant-water effects off. */
+	/** Vanilla water; Ecology distant-water effects off (swim fog/brightness unchanged). */
 	OFF("Off (vanilla)"),
 	/** Distance + fresnel alpha boost on marked water faces. */
 	OPACITY("Opaque water"),

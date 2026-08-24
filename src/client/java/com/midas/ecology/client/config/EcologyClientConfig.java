@@ -46,38 +46,38 @@ public final class EcologyClientConfig {
 	 */
 	public float fresnelPower = 0.75F;
 	/**
-	 * FOG_REMAP: how hard underwater sight fog / empty fill applies (0-1).
+	 * Fog tint: how hard behind-water fill / empty fill applies (0-1). JSON name kept.
 	 */
 	public float fogRemapBiasStrength = 1.0F;
 	/**
-	 * FOG_REMAP: blocks from camera where custom underwater fog begins (behind water).
+	 * Fog tint: blocks from camera where behind-water sight fog begins.
 	 */
-	public float underwaterSightStart = 16.0F;
+	public float sightFogStart = 16.0F;
 	/**
-	 * FOG_REMAP: blocks from camera where underwater fog is full (when not using render-distance %).
+	 * Fog tint: blocks from camera where behind-water sight fog is full (when not using render-distance %).
 	 */
-	public float underwaterSightEnd = 128.0F;
+	public float sightFogEnd = 128.0F;
 	/**
-	 * FOG_REMAP: when true, sight start and end are percents of fog render distance
+	 * Fog tint: when true, sight start and end are percents of fog render distance
 	 * instead of the block distances.
 	 */
-	public boolean underwaterSightEndUseRenderDistancePercent = true;
+	public boolean sightFogUseRenderDistancePercent = true;
 	/**
-	 * FOG_REMAP: percent of fog render distance (1-100) used as sight end when
-	 * {@link #underwaterSightEndUseRenderDistancePercent} is true.
+	 * Fog tint: percent of fog render distance (1-100) used as sight end when
+	 * {@link #sightFogUseRenderDistancePercent} is true.
 	 */
-	public int underwaterSightEndPercent = 70;
+	public int sightFogEndPercent = 70;
 	/**
-	 * FOG_REMAP: percent of fog render distance (0-100) used as sight start when
-	 * {@link #underwaterSightEndUseRenderDistancePercent} is true.
+	 * Fog tint: percent of fog render distance (0-100) used as sight start when
+	 * {@link #sightFogUseRenderDistancePercent} is true.
 	 */
-	public int underwaterSightStartPercent = 10;
+	public int sightFogStartPercent = 10;
 	/**
-	 * FOG_REMAP: darkens biome water fog color. 0 = as-is, 1 = black.
+	 * Fog tint: darkens biome water fog color. 0 = as-is, 1 = black.
 	 */
 	public float fogTintDarkness = 0.55F;
 	/**
-	 * FOG_REMAP: how hard air fog sits on the water surface (0-1).
+	 * Fog tint: how hard air fog sits on the water surface (0-1).
 	 * Restores land-matching horizon fog after behind-water unfog.
 	 */
 	public float surfaceAirFog = 1.0F;
@@ -95,28 +95,33 @@ public final class EcologyClientConfig {
 	 */
 	public float swimFogFadeSeconds = 1.0F;
 	/**
+	 * When true, Ecology replaces vanilla short underwater fog with the biome swim distances below.
+	 * When false, vanilla underwater fog distance is kept (brightness settings still apply).
+	 */
+	public boolean swimFogDistanceEnabled = true;
+	/**
 	 * Fallback swim view distance for rivers, lakes, and unknown biomes.
 	 * Does not scale with render distance.
 	 */
-	public float underwaterFogEnd = 24.0F;
+	public float underwaterFogEnd = 34.0F;
 	/** Kelp Forest. */
-	public float swimFogKelpCanopy = 26.0F;
+	public float swimFogKelpCanopy = 36.0F;
 	/** Frozen / cold shelf: Frozen Ocean, Sympagic Zone, Cold Ocean, Cold Eelgrass (+ coastal shallows). */
-	public float swimFogColdPolarShelf = 30.0F;
+	public float swimFogColdPolarShelf = 40.0F;
 	/** Temperate shelf: Ocean, Seagrass Meadow, Rocky Reef, Sand Wave Field (+ coastal shallows). */
-	public float swimFogTemperateShelf = 34.0F;
+	public float swimFogTemperateShelf = 44.0F;
 	/** Ice Edge and Polynya. */
-	public float swimFogIceOpenings = 38.0F;
+	public float swimFogIceOpenings = 48.0F;
 	/** Lukewarm Ocean, Subtropical Seagrass, Patch Reef, Soft Coral Garden (+ coastal shallows). */
-	public float swimFogSubtropical = 40.0F;
+	public float swimFogSubtropical = 50.0F;
 	/** Deep Basin (and leftover vanilla deep oceans). */
-	public float swimFogDeepBasin = 42.0F;
+	public float swimFogDeepBasin = 52.0F;
 	/** Warm Ocean, Coral Reef, Tropical Seagrass (+ coastal shallows). */
-	public float swimFogTropicalClear = 46.0F;
+	public float swimFogTropicalClear = 56.0F;
 	/** Lagoon. */
-	public float swimFogLagoon = 50.0F;
+	public float swimFogLagoon = 60.0F;
 	/** Open Ocean pelagic layer. */
-	public float swimFogOpenOcean = 50.0F;
+	public float swimFogOpenOcean = 60.0F;
 	/**
 	 * When true, Ecology distant-water effects turn off while an Iris shader pack is active.
 	 * When false, Ecology keeps applying even with Iris (may conflict).
@@ -129,7 +134,7 @@ public final class EcologyClientConfig {
 	public boolean debugHighlightFresnel = false;
 	/** Paint ANY partial-alpha terrain cyan — proves Ecology terrain.fsh is running at all. */
 	public boolean debugHighlightAllTranslucent = false;
-	/** Fog tint: pink = underwater sight fog / empty-behind mask. */
+	/** Fog tint: pink = behind-water sight fog / empty-behind mask. */
 	public boolean debugHighlightFogRemap = false;
 	/**
 	 * Fog tint: chat once when Fog tint is selected but Improved Transparency (Fabulous) is off.
@@ -140,11 +145,17 @@ public final class EcologyClientConfig {
 	private Boolean waterShaderEnabled;
 	/** Legacy field from older configs; migrated into {@link #waterShaderEnabled} then mode. */
 	private Boolean distantWaterOpacityEnabled;
-	/** Legacy FOG_REMAP fractions; ignored after underwaterSight* migration. */
+	/** Legacy Fog tint fractions; ignored after sightFog* migration. */
 	@SuppressWarnings("unused")
 	private Float fogTintDistanceStart;
 	@SuppressWarnings("unused")
 	private Float fogTintDistanceEnd;
+	/** Legacy behind-water sight fields; migrated into {@code sightFog*}. */
+	private Float underwaterSightStart;
+	private Float underwaterSightEnd;
+	private Boolean underwaterSightEndUseRenderDistancePercent;
+	private Integer underwaterSightEndPercent;
+	private Integer underwaterSightStartPercent;
 
 	private EcologyClientConfig() {
 	}
@@ -200,6 +211,11 @@ public final class EcologyClientConfig {
 		instance.distantWaterOpacityEnabled = null;
 		instance.fogTintDistanceStart = null;
 		instance.fogTintDistanceEnd = null;
+		instance.underwaterSightStart = null;
+		instance.underwaterSightEnd = null;
+		instance.underwaterSightEndUseRenderDistancePercent = null;
+		instance.underwaterSightEndPercent = null;
+		instance.underwaterSightStartPercent = null;
 		String json = GSON.toJson(instance);
 		if (json.equals(lastSavedJson) && Files.isRegularFile(PATH)) {
 			return;
@@ -235,13 +251,33 @@ public final class EcologyClientConfig {
 		} else if (this.distantWaterMode == null) {
 			this.distantWaterMode = DistantWaterMode.FOG_REMAP;
 		}
-		boolean hasSight = diskJson != null && diskJson.contains("\"underwaterSightEnd\"");
-		if (!hasSight && this.underwaterSightEnd <= 0.0F) {
-			this.underwaterSightStart = 16.0F;
-			this.underwaterSightEnd = 128.0F;
+		boolean hasSight = diskJson != null && (diskJson.contains("\"sightFogEnd\"") || diskJson.contains("\"underwaterSightEnd\""));
+		if (!hasSight && this.sightFogEnd <= 0.0F) {
+			this.sightFogStart = 16.0F;
+			this.sightFogEnd = 128.0F;
 		}
-		// First region table was 10 shorter on every ocean type except open ocean / rivers.
-		boolean originalRegionTable = Math.round(this.swimFogKelpCanopy) == 16
+		if (diskJson != null && !diskJson.contains("\"sightFogStart\"") && this.underwaterSightStart != null) {
+			this.sightFogStart = this.underwaterSightStart;
+		}
+		if (diskJson != null && !diskJson.contains("\"sightFogEnd\"") && this.underwaterSightEnd != null) {
+			this.sightFogEnd = this.underwaterSightEnd;
+		}
+		if (diskJson != null && !diskJson.contains("\"sightFogUseRenderDistancePercent\"")
+			&& this.underwaterSightEndUseRenderDistancePercent != null) {
+			this.sightFogUseRenderDistancePercent = this.underwaterSightEndUseRenderDistancePercent;
+		}
+		if (diskJson != null && !diskJson.contains("\"sightFogEndPercent\"") && this.underwaterSightEndPercent != null) {
+			this.sightFogEndPercent = this.underwaterSightEndPercent;
+		}
+		if (diskJson != null && !diskJson.contains("\"sightFogStartPercent\"") && this.underwaterSightStartPercent != null) {
+			this.sightFogStartPercent = this.underwaterSightStartPercent;
+		}
+		migrateSwimFogRegionTable();
+	}
+
+	/** Push saved region tables forward when they still match an older default set. */
+	private void migrateSwimFogRegionTable() {
+		boolean firstTable = Math.round(this.swimFogKelpCanopy) == 16
 			&& Math.round(this.swimFogColdPolarShelf) == 20
 			&& Math.round(this.swimFogTemperateShelf) == 24
 			&& Math.round(this.swimFogIceOpenings) == 28
@@ -249,15 +285,29 @@ public final class EcologyClientConfig {
 			&& Math.round(this.swimFogDeepBasin) == 32
 			&& Math.round(this.swimFogTropicalClear) == 36
 			&& Math.round(this.swimFogLagoon) == 40;
-		if (originalRegionTable) {
-			this.swimFogKelpCanopy = 26.0F;
-			this.swimFogColdPolarShelf = 30.0F;
-			this.swimFogTemperateShelf = 34.0F;
-			this.swimFogIceOpenings = 38.0F;
-			this.swimFogSubtropical = 40.0F;
-			this.swimFogDeepBasin = 42.0F;
-			this.swimFogTropicalClear = 46.0F;
-			this.swimFogLagoon = 50.0F;
+		boolean secondTable = Math.round(this.swimFogKelpCanopy) == 26
+			&& Math.round(this.swimFogColdPolarShelf) == 30
+			&& Math.round(this.swimFogTemperateShelf) == 34
+			&& Math.round(this.swimFogIceOpenings) == 38
+			&& Math.round(this.swimFogSubtropical) == 40
+			&& Math.round(this.swimFogDeepBasin) == 42
+			&& Math.round(this.swimFogTropicalClear) == 46
+			&& Math.round(this.swimFogLagoon) == 50;
+		if (firstTable || secondTable) {
+			this.swimFogKelpCanopy = 36.0F;
+			this.swimFogColdPolarShelf = 40.0F;
+			this.swimFogTemperateShelf = 44.0F;
+			this.swimFogIceOpenings = 48.0F;
+			this.swimFogSubtropical = 50.0F;
+			this.swimFogDeepBasin = 52.0F;
+			this.swimFogTropicalClear = 56.0F;
+			this.swimFogLagoon = 60.0F;
+		}
+		if (Math.round(this.swimFogOpenOcean) == 50) {
+			this.swimFogOpenOcean = 60.0F;
+		}
+		if (Math.round(this.underwaterFogEnd) == 24) {
+			this.underwaterFogEnd = 34.0F;
 		}
 	}
 
@@ -297,23 +347,28 @@ public final class EcologyClientConfig {
 		return clamp01(this.fogRemapBiasStrength);
 	}
 
-	public float clampedUnderwaterSightStart() {
-		return Math.max(0.0F, Math.min(256.0F, Math.round(this.underwaterSightStart)));
+	/** UI alias for {@link #clampedFogRemapBiasStrength()} (water fill strength). */
+	public float clampedFogTintFillStrength() {
+		return clampedFogRemapBiasStrength();
+	}
+
+	public float clampedSightFogStart() {
+		return Math.max(0.0F, Math.min(256.0F, Math.round(this.sightFogStart)));
 	}
 
 	/** Block-mode sight end; always &gt;= start + 1. */
-	public float clampedUnderwaterSightEnd() {
-		float start = clampedUnderwaterSightStart();
-		return Math.max(start + 1.0F, Math.min(256.0F, Math.round(this.underwaterSightEnd)));
+	public float clampedSightFogEnd() {
+		float start = clampedSightFogStart();
+		return Math.max(start + 1.0F, Math.min(256.0F, Math.round(this.sightFogEnd)));
 	}
 
-	public int clampedUnderwaterSightEndPercent() {
-		return Math.max(1, Math.min(100, this.underwaterSightEndPercent));
+	public int clampedSightFogEndPercent() {
+		return Math.max(1, Math.min(100, this.sightFogEndPercent));
 	}
 
-	public int clampedUnderwaterSightStartPercent() {
-		int end = clampedUnderwaterSightEndPercent();
-		return Math.max(0, Math.min(end - 1, this.underwaterSightStartPercent));
+	public int clampedSightFogStartPercent() {
+		int end = clampedSightFogEndPercent();
+		return Math.max(0, Math.min(end - 1, this.sightFogStartPercent));
 	}
 
 	public float clampedFogTintDarkness() {
@@ -336,6 +391,11 @@ public final class EcologyClientConfig {
 
 	public float clampedUnderwaterFogEnd() {
 		return clampSwimFog(this.underwaterFogEnd);
+	}
+
+	/** Alias for {@link #clampedUnderwaterFogEnd()} — swim fallback, not Fog tint. */
+	public float clampedSwimFogFallback() {
+		return clampedUnderwaterFogEnd();
 	}
 
 	public float clampedSwimFogFadeSeconds() {
@@ -426,10 +486,10 @@ public final class EcologyClientConfig {
 		this.fresnelStrength = clamp01(this.fresnelStrength);
 		this.fresnelPower = clampedFresnelPower();
 		this.fogRemapBiasStrength = clamp01(this.fogRemapBiasStrength);
-		this.underwaterSightStart = Math.max(0.0F, Math.min(256.0F, Math.round(this.underwaterSightStart)));
-		this.underwaterSightEnd = Math.max(this.underwaterSightStart + 1.0F, Math.min(256.0F, Math.round(this.underwaterSightEnd)));
-		this.underwaterSightEndPercent = Math.max(1, Math.min(100, this.underwaterSightEndPercent));
-		this.underwaterSightStartPercent = Math.max(0, Math.min(this.underwaterSightEndPercent - 1, this.underwaterSightStartPercent));
+		this.sightFogStart = Math.max(0.0F, Math.min(256.0F, Math.round(this.sightFogStart)));
+		this.sightFogEnd = Math.max(this.sightFogStart + 1.0F, Math.min(256.0F, Math.round(this.sightFogEnd)));
+		this.sightFogEndPercent = Math.max(1, Math.min(100, this.sightFogEndPercent));
+		this.sightFogStartPercent = Math.max(0, Math.min(this.sightFogEndPercent - 1, this.sightFogStartPercent));
 		this.fogTintDarkness = clamp01(this.fogTintDarkness);
 		this.surfaceAirFog = clamp01(this.surfaceAirFog);
 		this.underwaterLightStart = Math.max(0.0F, Math.min(256.0F, Math.round(this.underwaterLightStart)));

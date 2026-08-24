@@ -1,8 +1,12 @@
 package com.midas.ecology.client.mixin;
 
-import com.midas.ecology.client.render.UnderwaterLighting;
+import com.llamalad7.mixinextras.sugar.Local;
+import com.midas.ecology.client.render.SwimFogDistances;
 import com.midas.ecology.client.render.fog.FogUboLayout;
 import com.midas.ecology.client.render.fog.FogUboState;
+import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.fog.FogData;
 import net.minecraft.client.renderer.fog.FogRenderer;
 import org.joml.Vector4f;
@@ -13,14 +17,20 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.nio.ByteBuffer;
 
 /**
  * Replaces the Fog UBO size and write path with {@link FogUboLayout} so Ecology extras
  * ({@code EcologyWaterFogColor}, {@code EcologyCameraUnderwater}) are first-class fields.
+ * <p>
+ * Mutates {@link FogData} environmental fog in {@code setupFog} so Sodium's
+ * {@code FogParameters} capture (and the vanilla UBO) both see stretched swim fog.
+ * Priority {@code 900} (below Sodium's default 1000): at {@code RETURN}, lower priority
+ * runs first, so FogData is stretched before Sodium copies it.
  */
-@Mixin(FogRenderer.class)
+@Mixin(value = FogRenderer.class, priority = 900)
 public class FogRendererMixin {
 	@Shadow
 	@Final
@@ -32,8 +42,21 @@ public class FogRendererMixin {
 		FOG_UBO_SIZE = FogUboLayout.SIZE;
 	}
 
-	@Inject(method = "updateBuffer(Lnet/minecraft/client/renderer/fog/FogData;)V", at = @At("HEAD"))
-	private void ecology$prepareFogExtras(FogData fog, CallbackInfo ci) {
+	/**
+	 * Stretch swim fog on FogData and prepare UBO extras once — Sodium copies FogParameters
+	 * after this RETURN, then vanilla {@code updateBuffer} writes the same values.
+	 */
+	@Inject(method = "setupFog", at = @At("RETURN"))
+	private void ecology$stretchFogData(
+		Camera camera,
+		int renderDistanceInChunks,
+		DeltaTracker deltaTracker,
+		float darkenWorldAmount,
+		ClientLevel level,
+		CallbackInfoReturnable<?> cir,
+		@Local FogData fog
+	) {
+		SwimFogDistances.apply(fog);
 		FogUboState.prepare(fog.color);
 	}
 
@@ -54,23 +77,16 @@ public class FogRendererMixin {
 		float cloudEnd,
 		CallbackInfo ci
 	) {
-		float[] envFog = UnderwaterLighting.stretchEnvironmentalFog(environmentalStart, environmentalEnd);
-		float sky = skyEnd;
-		float cloud = cloudEnd;
-		if (UnderwaterLighting.shouldApply()) {
-			sky = envFog[1];
-			cloud = envFog[1];
-		}
 		FogUboLayout.write(
 			buffer,
 			offset,
 			color,
-			envFog[0],
-			envFog[1],
+			environmentalStart,
+			environmentalEnd,
 			renderDistanceStart,
 			renderDistanceEnd,
-			sky,
-			cloud,
+			skyEnd,
+			cloudEnd,
 			FogUboState.waterFogColor(),
 			FogUboState.cameraUnderwater()
 		);

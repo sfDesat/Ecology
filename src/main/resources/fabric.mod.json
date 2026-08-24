@@ -24,7 +24,8 @@
 	},
 	"mixins": [
 		"ecology.mixins.json",
-		"ecology.client.mixins.json"
+		"ecology.client.mixins.json",
+		"ecology.sodium.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.19.3",
@@ -34,6 +35,7 @@
 	},
 	"suggests": {
 		"modmenu": "*",
-		"cloth-config": "*"
+		"cloth-config": "*",
+		"sodium": "*"
 	}
 }

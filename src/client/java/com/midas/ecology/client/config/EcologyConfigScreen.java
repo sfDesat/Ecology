@@ -20,7 +20,6 @@ public final class EcologyConfigScreen {
 			.setSavingRunnable(() -> {
 				EcologyClientConfig.save();
 				DistantWaterShaderSupport.applyConfigAndReload();
-				EcologyClientConfig.notifyPlayer("Ecology config saved. " + DistantWaterShaderSupport.statusSummary());
 				EcologyMod.LOGGER.info("Ecology config saved via Cloth: {}", DistantWaterShaderSupport.statusSummary());
 			});
 
@@ -52,7 +51,7 @@ public final class EcologyConfigScreen {
 		general.addEntry(entries.startBooleanToggle(Component.literal("Auto-disable with Iris shader packs"), config.irisAutoDisable)
 			.setDefaultValue(true)
 			.setTooltip(Component.literal(
-				"When on, Ecology distant-water and swimming visuals turn off while an Iris pack is active, so the pack can draw water itself."
+				"When on, Ecology fog tint, opaque water, and swimming fog/brightness turn off while an Iris shader pack is actually running. Iris installed with no pack still uses Ecology. Sodium is supported separately via Ecology's Sodium shader overlay."
 			))
 			.setSaveConsumer(value -> config.irisAutoDisable = value)
 			.build());
@@ -72,7 +71,7 @@ public final class EcologyConfigScreen {
 		general.addEntry(entries.startBooleanToggle(Component.literal("Highlight all translucent (cyan)"), config.debugHighlightAllTranslucent)
 			.setDefaultValue(false)
 			.setTooltip(Component.literal(
-				"Paints ice, glass, and water cyan. If nothing changes, Ecology’s terrain shader is not running (e.g. Sodium replacing it)."
+				"Paints ice, glass, and water cyan. If nothing changes, Ecology’s terrain shader is not running (vanilla override missing, or Sodium overlay failed)."
 			))
 			.setSaveConsumer(value -> config.debugHighlightAllTranslucent = value)
 			.build());
@@ -95,48 +94,48 @@ public final class EcologyConfigScreen {
 		fog.addEntry(entries.startTextDescription(Component.literal(
 			"See-through: how far you can look into the water before the seafloor fades into biome water fog (the pale-basin fix)."
 		)).build());
-		fog.addEntry(entries.startBooleanToggle(Component.literal("See-through distances use % of render distance"), config.underwaterSightEndUseRenderDistancePercent)
+		fog.addEntry(entries.startBooleanToggle(Component.literal("See-through distances use % of render distance"), config.sightFogUseRenderDistancePercent)
 			.setDefaultValue(true)
 			.setTooltip(Component.literal(
 				"On (default): start and end both scale with your render distance. Off: use fixed block distances instead."
 			))
-			.setSaveConsumer(value -> config.underwaterSightEndUseRenderDistancePercent = value)
+			.setSaveConsumer(value -> config.sightFogUseRenderDistancePercent = value)
 			.build());
-		fog.addEntry(entries.startIntField(Component.literal("See-through start (% of render distance)"), config.underwaterSightStartPercent)
+		fog.addEntry(entries.startIntField(Component.literal("See-through start (% of render distance)"), config.sightFogStartPercent)
 			.setDefaultValue(10)
 			.setMin(0)
 			.setMax(99)
 			.setTooltip(Component.literal(
 				"Used when “% of render distance” is on. Distance where water-fog fill begins. Always kept below end."
 			))
-			.setSaveConsumer(value -> config.underwaterSightStartPercent = value)
+			.setSaveConsumer(value -> config.sightFogStartPercent = value)
 			.build());
-		fog.addEntry(entries.startIntField(Component.literal("See-through end (% of render distance)"), config.underwaterSightEndPercent)
+		fog.addEntry(entries.startIntField(Component.literal("See-through end (% of render distance)"), config.sightFogEndPercent)
 			.setDefaultValue(70)
 			.setMin(1)
 			.setMax(100)
 			.setTooltip(Component.literal(
 				"Used when “% of render distance” is on. Distance where water-fog fill is full. Effective end is always at least start + 1 block."
 			))
-			.setSaveConsumer(value -> config.underwaterSightEndPercent = value)
+			.setSaveConsumer(value -> config.sightFogEndPercent = value)
 			.build());
-		fog.addEntry(entries.startIntField(Component.literal("See-through start (blocks)"), Math.round(config.underwaterSightStart))
+		fog.addEntry(entries.startIntField(Component.literal("See-through start (blocks)"), Math.round(config.sightFogStart))
 			.setDefaultValue(16)
 			.setMin(0)
 			.setMax(256)
 			.setTooltip(Component.literal(
 				"Used when “% of render distance” is off. Distance from the camera where water-fog fill begins. Close water stays clear."
 			))
-			.setSaveConsumer(value -> config.underwaterSightStart = value)
+			.setSaveConsumer(value -> config.sightFogStart = value)
 			.build());
-		fog.addEntry(entries.startIntField(Component.literal("See-through end (blocks)"), Math.round(config.underwaterSightEnd))
+		fog.addEntry(entries.startIntField(Component.literal("See-through end (blocks)"), Math.round(config.sightFogEnd))
 			.setDefaultValue(128)
 			.setMin(1)
 			.setMax(256)
 			.setTooltip(Component.literal(
 				"Used when “% of render distance” is off. Distance where water-fog fill is full. Always at least start + 1."
 			))
-			.setSaveConsumer(value -> config.underwaterSightEnd = value)
+			.setSaveConsumer(value -> config.sightFogEnd = value)
 			.build());
 		fog.addEntry(entries.startFloatField(Component.literal("Water fill strength (0-1)"), config.fogRemapBiasStrength)
 			.setDefaultValue(1.0F)
@@ -195,6 +194,13 @@ public final class EcologyConfigScreen {
 		underwater.addEntry(entries.startTextDescription(Component.literal(
 			"View distance: how far you can see while swimming, by water type. Vanilla water fog is short and also fades in over time; Ecology replaces that with these block distances. They do not scale with render distance."
 		)).build());
+		underwater.addEntry(entries.startBooleanToggle(Component.literal("Custom swim fog distance"), config.swimFogDistanceEnabled)
+			.setDefaultValue(true)
+			.setTooltip(Component.literal(
+				"When on, Ecology replaces vanilla short underwater fog with the region distances below (works with Sodium terrain). When off, vanilla underwater fog distance is kept; brightness settings still apply."
+			))
+			.setSaveConsumer(value -> config.swimFogDistanceEnabled = value)
+			.build());
 		underwater.addEntry(entries.startFloatField(Component.literal("Region fade (seconds)"), config.swimFogFadeSeconds)
 			.setDefaultValue(1.0F)
 			.setMin(0.0F)
@@ -204,34 +210,34 @@ public final class EcologyConfigScreen {
 			))
 			.setSaveConsumer(value -> config.swimFogFadeSeconds = value)
 			.build());
-		addSwimFogField(underwater, entries, "Kelp canopy", config.swimFogKelpCanopy, 26,
+		addSwimFogField(underwater, entries, "Kelp canopy", config.swimFogKelpCanopy, 36,
 			"Kelp Forest. Shortest vis — canopy and particles.",
 			value -> config.swimFogKelpCanopy = value);
-		addSwimFogField(underwater, entries, "Cold / polar shelf", config.swimFogColdPolarShelf, 30,
+		addSwimFogField(underwater, entries, "Cold / polar shelf", config.swimFogColdPolarShelf, 40,
 			"Frozen Ocean, Sympagic Zone, Cold Ocean, Cold Eelgrass. Nutrient-rich green-grey water.",
 			value -> config.swimFogColdPolarShelf = value);
-		addSwimFogField(underwater, entries, "Temperate shelf", config.swimFogTemperateShelf, 34,
+		addSwimFogField(underwater, entries, "Temperate shelf", config.swimFogTemperateShelf, 44,
 			"Ocean, Seagrass Meadow, Temperate Rocky Reef, Sand Wave Field.",
 			value -> config.swimFogTemperateShelf = value);
-		addSwimFogField(underwater, entries, "Ice openings", config.swimFogIceOpenings, 38,
+		addSwimFogField(underwater, entries, "Ice openings", config.swimFogIceOpenings, 48,
 			"Ice Edge and Polynya. Cold-clear openings in the pack.",
 			value -> config.swimFogIceOpenings = value);
-		addSwimFogField(underwater, entries, "Subtropical", config.swimFogSubtropical, 40,
+		addSwimFogField(underwater, entries, "Subtropical", config.swimFogSubtropical, 50,
 			"Lukewarm Ocean, Subtropical Seagrass, Patch Reef, Soft Coral Garden.",
 			value -> config.swimFogSubtropical = value);
-		addSwimFogField(underwater, entries, "Deep basin", config.swimFogDeepBasin, 42,
+		addSwimFogField(underwater, entries, "Deep basin", config.swimFogDeepBasin, 52,
 			"Deep Basin. Fairly clean water, but dark — vis dies from light, not silt.",
 			value -> config.swimFogDeepBasin = value);
-		addSwimFogField(underwater, entries, "Tropical clear", config.swimFogTropicalClear, 46,
+		addSwimFogField(underwater, entries, "Tropical clear", config.swimFogTropicalClear, 56,
 			"Warm Ocean, Coral Reef, Tropical Seagrass.",
 			value -> config.swimFogTropicalClear = value);
-		addSwimFogField(underwater, entries, "Lagoon", config.swimFogLagoon, 50,
+		addSwimFogField(underwater, entries, "Lagoon", config.swimFogLagoon, 60,
 			"Lagoon. Glass-clear sand shallows; often clearer than the reef.",
 			value -> config.swimFogLagoon = value);
-		addSwimFogField(underwater, entries, "Open ocean", config.swimFogOpenOcean, 50,
+		addSwimFogField(underwater, entries, "Open ocean", config.swimFogOpenOcean, 60,
 			"Open Ocean (upper pelagic). Longest swim vis. Drops to Deep basin when you go deeper.",
 			value -> config.swimFogOpenOcean = value);
-		addSwimFogField(underwater, entries, "Other water (rivers, lakes)", config.underwaterFogEnd, 24,
+		addSwimFogField(underwater, entries, "Other water (rivers, lakes)", config.underwaterFogEnd, 34,
 			"Rivers, lakes, and any biome not listed above.",
 			value -> config.underwaterFogEnd = value);
 	}

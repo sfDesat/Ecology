@@ -76,12 +76,12 @@ float ecologyAirFogAmount(vec3 fogPos) {
 
 float ecologyUnderwaterSightFog(float viewDist) {
     float rd = max(FogRenderDistanceEnd, 1.0);
-    float sightStart = EcologyUnderwaterSightEndUsePercent > 0.5
-        ? rd * clamp(EcologyUnderwaterSightStartPercent, 0.0, 1.0)
-        : EcologyUnderwaterSightStart;
-    float sightEndBlocks = EcologyUnderwaterSightEndUsePercent > 0.5
-        ? rd * clamp(EcologyUnderwaterSightEndPercent, 0.0, 1.0)
-        : EcologyUnderwaterSightEnd;
+    float sightStart = EcologySightFogEndUsePercent > 0.5
+        ? rd * clamp(EcologySightFogStartPercent, 0.0, 1.0)
+        : EcologySightFogStart;
+    float sightEndBlocks = EcologySightFogEndUsePercent > 0.5
+        ? rd * clamp(EcologySightFogEndPercent, 0.0, 1.0)
+        : EcologySightFogEnd;
     // Always at least start + 1 block.
     float sightEnd = max(sightEndBlocks, sightStart + 1.0);
     return linear_fog_value(viewDist, sightStart, sightEnd);
@@ -113,8 +113,10 @@ void main() {
     bool ecologyActive = EcologyWaterShaderEnabled > 0.5;
     bool fogRemapMode = ecologyActive && EcologyDistantWaterMode > 1.5;
     bool cameraUnderwater = EcologyCameraUnderwater > 0.5;
-    bool emptyBehind = mainDepth <= 1.0e-5;
-    float cover = clamp(EcologyFogRemapBiasStrength, 0.0, 1.0);
+    float cover = clamp(EcologyFogTintFillStrength, 0.0, 1.0);
+    // Reverse-Z: clear/sky ≈ 0, but far solids also approach 0 — require sky-like color too.
+    float skyLikeness = 1.0 - smoothstep(0.025, 0.22, length(mainRgb - FogColor.rgb));
+    bool emptyBehind = mainDepth <= 1.0e-6 && skyLikeness > 0.85;
 
     bool isWater = false;
     if (fogRemapMode) {

@@ -1,0 +1,16 @@
+{
+	"required": false,
+	"plugin": "com.midas.ecology.client.mixin.sodium.SodiumMixinPlugin",
+	"package": "com.midas.ecology.client.mixin.sodium",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"DefaultFluidRendererMixin",
+		"GlobalUniformsMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

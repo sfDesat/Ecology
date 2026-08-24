@@ -9,6 +9,8 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 /**
  * Saves the level perspective projection before Fabulous transparency switches to ortho.
+ * {@code ordinal = 0} is the first {@code ProjectionMatrixBuffer.getBuffer} in {@code renderLevel}
+ * (the level camera projection, not a later overlay/ortho).
  */
 @Mixin(GameRenderer.class)
 public class GameRendererMixin {

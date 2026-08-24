@@ -1,22 +1,22 @@
-#version 330
+#version 330 core
 
-#moj_import <minecraft:fog.glsl>
-#moj_import <minecraft:globals.glsl>
-#moj_import <minecraft:chunksection.glsl>
+#moj_import <sodium:globals.glsl>
+#moj_import <sodium:fog.glsl>
+#moj_import <sodium:chunk_material.glsl>
 #moj_import <ecology:distant_water_settings.glsl>
 #moj_import <ecology:water_mask.glsl>
 #moj_import <ecology:ecology_water_fragment.glsl>
 
-uniform sampler2D Sampler0;
-
-in float sphericalVertexDistance;
-in float cylindricalVertexDistance;
-in vec4 vertexColor;
-in vec2 texCoord0;
+in vec4 v_Color; // The interpolated vertex color
+in vec2 v_TexCoord; // The interpolated block texture coordinates
+in vec2 v_FragDistance; // The fragment's distance from the camera (cylindrical and spherical)
+in float fadeFactor;
 in float ecologyWaterFace;
 in float ecologyGrazing;
 
-out vec4 fragColor;
+uniform sampler2D u_BlockTex; // The block texture
+
+out vec4 fragColor; // The output fragment for the color framebuffer
 
 vec4 sampleNearest(sampler2D source, vec2 uv, vec2 pixelSize, vec2 du, vec2 dv, vec2 texelScreenSize) {
     // Convert our UV back up to texel coordinates and find out how far over we are from the center of each pixel
@@ -62,10 +62,6 @@ vec4 sampleRGSS(sampler2D source, vec2 uv, vec2 pixelSize) {
 
     float mipLevelExact = max(0.0, log2(effectiveDerivative / minPixelSize));
 
-    float mipLevelLow = floor(mipLevelExact);
-    float mipLevelHigh = mipLevelLow + 1.0;
-    float mipBlend = fract(mipLevelExact);
-
     const vec2 offsets[4] = vec2[](
     vec2(0.125, 0.375),
     vec2(-0.125, -0.375),
@@ -73,17 +69,12 @@ vec4 sampleRGSS(sampler2D source, vec2 uv, vec2 pixelSize) {
     vec2(-0.375, 0.125)
     );
 
-    vec4 rgssColorLow = vec4(0.0);
-    vec4 rgssColorHigh = vec4(0.0);
+    vec4 rgssColor = vec4(0.0);
     for (int i = 0; i < 4; ++i) {
         vec2 sampleUV = uv + offsets[i] * pixelSize;
-        rgssColorLow += textureLod(source, sampleUV, mipLevelLow);
-        rgssColorHigh += textureLod(source, sampleUV, mipLevelHigh);
+        rgssColor += textureLod(source, sampleUV, mipLevelExact);
     }
-    rgssColorLow *= 0.25;
-    rgssColorHigh *= 0.25;
-
-    vec4 rgssColor = mix(rgssColorLow, rgssColorHigh, mipBlend);
+    rgssColor *= 0.25;
 
     vec4 nearestColor = sampleNearest(source, uv, pixelSize, du, dv, texelScreenSize);
 
@@ -91,18 +82,19 @@ vec4 sampleRGSS(sampler2D source, vec2 uv, vec2 pixelSize) {
 }
 
 void main() {
-    vec4 color = (UseRgss == 1 ? sampleRGSS(Sampler0, texCoord0, 1.0f / TextureSize) : sampleNearest(Sampler0, texCoord0, 1.0f / TextureSize)) * vertexColor;
+    vec4 color = u_UseRGSS ? sampleRGSS(u_BlockTex, v_TexCoord, u_TexelSize) : sampleNearest(u_BlockTex, v_TexCoord, u_TexelSize);
+    color *= v_Color;
 
     bool waterFace = ecologyWaterFace > 0.5;
-    color = ecologyApplyOpaqueWaterAndDebug(color, waterFace, cylindricalVertexDistance, ecologyGrazing, max(FogRenderDistanceEnd, 1.0));
+    float cylindricalDistance = v_FragDistance.x;
+    color = ecologyApplyOpaqueWaterAndDebug(color, waterFace, cylindricalDistance, ecologyGrazing, max(u_RenderFog.y, 1.0));
 
-    vec4 fogForFragment = FogColor;
-    color = mix(fogForFragment * vec4(1, 1, 1, color.a), color, ChunkVisibility);
 #ifdef ALPHA_CUTOUT
     if (color.a < ALPHA_CUTOUT) {
         discard;
     }
 #endif
-    fragColor = apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, fogForFragment);
+
+    fragColor = _linearFog(color, v_FragDistance, u_FogColor, u_EnvironmentFog, u_RenderFog, fadeFactor);
     fragColor = ecologyEncodeFogTintMask(fragColor, waterFace);
 }

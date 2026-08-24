@@ -8,9 +8,9 @@ layout(std140) uniform Fog {
     float FogRenderDistanceEnd;
     float FogSkyEnd;
     float FogCloudsEnd;
-    // Ecology: biome water fog color while camera is in air (see FogRendererMixin).
+    // Ecology: biome water fog color while camera is in air (Fog tint). Underwater copies active FogColor.
     vec4 EcologyWaterFogColor;
-    // Ecology: 1.0 when camera fluid is water (replaces FogCloudsEnd hijack).
+    // Ecology: 1.0 when camera fluid is water.
     float EcologyCameraUnderwater;
 };
 

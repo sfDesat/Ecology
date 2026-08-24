@@ -9,6 +9,8 @@ import org.joml.Vector4f;
 
 /**
  * Per-frame Ecology fields for the Fog UBO (water fog color + camera-underwater).
+ * Prepared once from {@code FogRenderer.setupFog} so vanilla UBO write and Sodium
+ * {@code u_Globals} extras see the same values.
  */
 public final class FogUboState {
 	private static final Vector4f WATER_FOG = new Vector4f(0.04F, 0.12F, 0.18F, 1.0F);

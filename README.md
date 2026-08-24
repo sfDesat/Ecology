@@ -11,7 +11,7 @@ Mob ecology and new creatures are planned later; this repo currently ships the o
 
 ## Dev dependencies
 
-Mod Menu and Cloth Config are included as **local runtime** deps for testing config screens later. They are not hard requirements of the mod.
+Mod Menu, Cloth Config, and Sodium are included as **local runtime** deps for testing. They are not hard requirements of the published mod.
 
 ## Client: distant water
 
@@ -21,7 +21,7 @@ Ecology offers two **mutually exclusive** fixes (`core/terrain` + Fog UBO extens
 
 | Mode | UI name | Behavior |
 |------|---------|----------|
-| `OFF` | Off (vanilla) | Vanilla water |
+| `OFF` | Off (vanilla) | Vanilla water meshes and Sodium shaders. Swim fog/brightness stay on their own toggles. |
 | `OPACITY` | Opaque water | Raise marked water-face alpha with distance + optional fresnel |
 | `FOG_REMAP` | Fog tint | Replace pale fog/sky *behind water only* with water fog (Fabulous); white fog on top of water unchanged |
 
@@ -33,8 +33,11 @@ Ecology offers two **mutually exclusive** fixes (`core/terrain` + Fog UBO extens
 | Key | Default | Meaning |
 |-----|---------|---------|
 | `distantWaterMode` | `FOG_REMAP` | `OFF` / `OPACITY` / `FOG_REMAP` |
-| `fogRemapBiasStrength` | `1.0` | Fog tint: strength of behind-water fog/sky replacement at distance |
+| `fogRemapBiasStrength` | `1.0` | Fog tint: water fill strength (behind-water fog/sky replacement) |
 | `fogTintDarkness` | `0.55` | Fog tint: darkens water fog used *behind* water (`0` = biome color, `1` = black) |
+| `sightFogStart` | `16` | Fog tint: behind-water fill start in blocks (when not using %) |
+| `sightFogEnd` | `128` | Fog tint: behind-water fill end in blocks |
+| `sightFogUseRenderDistancePercent` | `true` | Fog tint: scale sight start/end with render distance |
 | `distanceOpacityEnabled` | `true` | OPACITY: distance-based opacity (off = fresnel-only) |
 | `distantWaterOpacityStrength` | `1.0` | OPACITY: opacity at End distance (`1.0` = fully opaque) |
 | `distantWaterOpacityStart` | `0.0` | OPACITY: fraction of render-distance fog where boost begins |
@@ -46,10 +49,11 @@ Ecology offers two **mutually exclusive** fixes (`core/terrain` + Fog UBO extens
 | `debugLogging` | `false` | Log diagnostics; print status to chat when config applies |
 | `debugHighlightFresnel` | `false` | Paint marked water green→red by view angle |
 
-- Legacy configs with `waterShaderEnabled: true` (no mode) migrate to `OPACITY`
-- Effects apply only when the camera is **above water** (underwater fog stays vanilla)
+- Legacy configs with `waterShaderEnabled: true` (no mode) migrate to `OPACITY`; `underwaterSight*` migrates to `sightFog*`
+- Distant water applies only when the camera is **above water**. Swim fog/brightness are separate and keep their own toggles.
 - Runtime settings overlay: `config/ecology/distant_water_pack/` (written only when settings change)
-- **Sodium** may ignore vanilla `core/terrain` overrides; Iris packs auto-disable unless `irisAutoDisable` is off
+- **Sodium**: soft-compat via fluid marker mixin + TOP-pack forks of `sodium:blocks/block_layer_opaque` (pinned to Sodium `mc26.2-0.9.1-fabric`). Overlay is **not** installed while Distant water is Off. Fog tint still needs Fabulous. Iris packs auto-disable unless `irisAutoDisable` is off
+- Fog tint without Fabulous does not encode water alpha (warning only). Switching Off/On rebuilds chunks so water markers are added or stripped.
 - Check the log for `[Ecology DistantWater]` lines if the effect is missing (enable `debugLogging`)
 
 ## Design notes

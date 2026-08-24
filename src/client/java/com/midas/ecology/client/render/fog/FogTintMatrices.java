@@ -1,5 +1,6 @@
 package com.midas.ecology.client.render.fog;
 
+import com.midas.ecology.EcologyMod;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.buffers.Std140SizeCalculator;
@@ -12,13 +13,14 @@ import org.joml.Matrix4fc;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Captures level perspective {@code Proj * View} inverse for Fabulous transparency
  * depth unfog (post passes replace {@code Projection} with ortho).
  * <p>
- * Matrices are stored cheaply during the level pass; GPU upload happens once on first
- * bind of the transparency post pass while Fog tint is active.
+ * {@code transparency.fsh} always declares this UBO, so it is captured and bound
+ * whenever the transparency pass runs — including Distant water Off / Opaque.
  */
 public final class FogTintMatrices {
 	public static final String UNIFORM_NAME = "EcologyDepthFog";
@@ -34,29 +36,26 @@ public final class FogTintMatrices {
 	private static final Matrix4f VIEW = new Matrix4f();
 	private static final Matrix4f CLIP = new Matrix4f();
 	private static final Matrix4f INV = new Matrix4f();
+	private static final Matrix4f TMP = new Matrix4f();
 
 	private static boolean hasProj;
 	private static boolean hasView;
+	private static boolean hasInv;
 	private static boolean dirty;
 	private static boolean inTransparencyPass;
 	private static GpuBuffer buffer;
+	private static final AtomicBoolean INVERT_WARNED = new AtomicBoolean(false);
 
 	private FogTintMatrices() {
 	}
 
 	public static void captureProjection(Matrix4fc projection) {
-		if (!FogTint.isActive()) {
-			return;
-		}
 		PROJ.set(projection);
 		hasProj = true;
 		dirty = true;
 	}
 
 	public static void captureView(Matrix4fc modelView) {
-		if (!FogTint.isActive()) {
-			return;
-		}
 		VIEW.set(modelView);
 		hasView = true;
 		dirty = true;
@@ -70,32 +69,57 @@ public final class FogTintMatrices {
 		inTransparencyPass = false;
 	}
 
-	/** Bind InvClipToFog when the Fabulous transparency pass is drawing and Fog tint is on. */
+	/** Bind InvClipToFog for the Fabulous transparency pass (always declared by Ecology's post shader). */
 	public static void bindIfTransparencyPass(RenderPass renderPass) {
-		if (!inTransparencyPass || !FogTint.isActive()) {
+		if (!inTransparencyPass) {
 			return;
 		}
-		if (!hasProj || !hasView) {
-			return;
-		}
-		if (dirty) {
+		if (dirty && hasProj && hasView) {
 			recomputeAndUpload();
 			dirty = false;
 		}
+		ensureBuffer();
 		if (buffer != null) {
 			renderPass.setUniform(UNIFORM_NAME, buffer);
 		}
 	}
 
+	/** Drop the GPU buffer on resource reload / device reset so the next bind recreates it. */
+	public static void releaseBuffer() {
+		if (buffer != null) {
+			buffer.close();
+			buffer = null;
+		}
+		hasInv = false;
+		dirty = true;
+	}
+
 	private static void recomputeAndUpload() {
 		CLIP.set(PROJ).mul(VIEW);
-		if (CLIP.invert(INV) == null) {
-			INV.identity();
+		if (CLIP.invert(TMP) == null) {
+			if (!hasInv) {
+				INV.identity();
+				hasInv = true;
+			}
+			if (INVERT_WARNED.compareAndSet(false, true)) {
+				EcologyMod.LOGGER.warn("[Ecology Fog tint] Proj*View was singular; keeping last InvClipToFog");
+			}
+		} else {
+			INV.set(TMP);
+			hasInv = true;
+			INVERT_WARNED.set(false);
 		}
+		uploadInv();
+	}
+
+	private static void uploadInv() {
 		if (RenderSystem.getDevice() == null) {
 			return;
 		}
 		ensureBuffer();
+		if (buffer == null) {
+			return;
+		}
 		try (MemoryStack stack = MemoryStack.stackPush()) {
 			ByteBuffer data = Std140Builder.onStack(stack, UBO_SIZE).putMat4f(INV).get();
 			RenderSystem.getDevice().createCommandEncoder().writeToBuffer(buffer.slice(), data);
@@ -103,8 +127,23 @@ public final class FogTintMatrices {
 	}
 
 	private static void ensureBuffer() {
+		if (RenderSystem.getDevice() == null) {
+			return;
+		}
+		if (buffer != null && buffer.isClosed()) {
+			buffer = null;
+			hasInv = false;
+		}
 		if (buffer == null) {
 			buffer = RenderSystem.getDevice().createBuffer(() -> "Ecology FogTint InvClipToFog", UBO_USAGE, UBO_SIZE);
+			if (!hasInv) {
+				INV.identity();
+				hasInv = true;
+				try (MemoryStack stack = MemoryStack.stackPush()) {
+					ByteBuffer data = Std140Builder.onStack(stack, UBO_SIZE).putMat4f(INV).get();
+					RenderSystem.getDevice().createCommandEncoder().writeToBuffer(buffer.slice(), data);
+				}
+			}
 		}
 	}
 }
