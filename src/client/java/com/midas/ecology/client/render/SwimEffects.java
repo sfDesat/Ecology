@@ -14,7 +14,7 @@ public final class SwimEffects {
 
 	public static boolean shouldApply() {
 		EcologyClientConfig config = EcologyClientConfig.get();
-		if (config.irisAutoDisable && IrisCompat.isShaderPackInUse()) {
+		if (config.pauseWithIris && IrisCompat.isShaderPackInUse()) {
 			return false;
 		}
 		Minecraft client = Minecraft.getInstance();

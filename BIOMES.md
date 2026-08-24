@@ -37,7 +37,7 @@ Named animals in biome sections are **aspirational** (future Ecology mobs). Curr
 
 **Open Ocean** — shipped
 
-**Deep Basin** — shipped (gravel/rock floor, dead fans; vents deferred)
+**Deep Basin** — shipped (gravel/rock floor, dead fans)
 
 ## Biomes
 
@@ -231,7 +231,7 @@ Animals (aspirational): Flying fish, sardine and mackerel schools, bioluminescen
 
 Lower pelagic / deep basin floor (`ecology:deep_basin`). Temperature: temperate (0.5). Depth: from about Y 12–15 down to the seafloor (48+ below sea level into deep basins).
 
-The dark lower water and deep basin floor under open ocean — one shared deep biome instead of climate-split vanilla deeps. Also used as the horizontal MultiNoise marker for deep columns **and the warm outer shelf** before vertical remapping (vanilla has no `deep_warm_ocean`; see Notes). Dark navy fog (#061a28), near-black water (#080c18), dim gravel and rock floor, sparse **dead (gray) coral fans**, full cave / canyon carving. (Hydrothermal vents deferred.)
+The dark lower water and deep basin floor under open ocean — one shared deep biome instead of climate-split vanilla deeps. Also used as the horizontal MultiNoise marker for deep columns **and the warm outer shelf** before vertical remapping (vanilla has no `deep_warm_ocean`; see Notes). Dark navy fog (#061a28), near-black water (#080c18), dim gravel and rock floor, sparse **dead (gray) coral fans**, full cave / canyon carving.
 
 Animals (aspirational): Grenadiers (rattails), deep-sea hagfish, lanternfish, anglerfish, sixgill sharks, elephant seals as deep-diving visitors.
 

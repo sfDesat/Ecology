@@ -23,7 +23,7 @@ public final class SwimFogDistances {
 	}
 
 	public static boolean shouldStretch() {
-		return EcologyClientConfig.get().swimFogDistanceEnabled && SwimEffects.shouldApply();
+		return EcologyClientConfig.get().swimming.customDistance && SwimEffects.shouldApply();
 	}
 
 	public static void apply(FogData fog) {
@@ -49,7 +49,7 @@ public final class SwimFogDistances {
 	 */
 	private static float fadedSwimFogEnd(float targetEnd) {
 		long now = System.nanoTime();
-		float duration = EcologyClientConfig.get().clampedSwimFogFadeSeconds();
+		float duration = EcologyClientConfig.get().swimming.clampedFadeSeconds();
 		if (!wasUnderwater) {
 			displayedSwimFogEnd = targetEnd;
 			fadeFromEnd = targetEnd;
@@ -84,10 +84,10 @@ public final class SwimFogDistances {
 	private static float currentSwimFogEnd() {
 		Minecraft client = Minecraft.getInstance();
 		if (client == null || client.level == null || client.gameRenderer == null) {
-			return EcologyClientConfig.get().clampedSwimFogFallback();
+			return EcologyClientConfig.get().swimming.clampedOtherWater();
 		}
 		Vec3 camera = client.gameRenderer.mainCamera().position();
-		return EcologyClientConfig.get().clampedSwimFogEnd(
+		return EcologyClientConfig.get().swimming.endFor(
 			client.level.getBiome(BlockPos.containing(camera))
 		);
 	}

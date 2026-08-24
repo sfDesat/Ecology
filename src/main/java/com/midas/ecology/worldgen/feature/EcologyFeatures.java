@@ -50,13 +50,6 @@ public final class EcologyFeatures {
 			new DeadSeafloorFanFeature(NoneFeatureConfiguration.CODEC)
 		);
 
-	public static final Feature<NoneFeatureConfiguration> HYDROTHERMAL_VENT =
-		Registry.register(
-			BuiltInRegistries.FEATURE,
-			EcologyMod.id("hydrothermal_vent"),
-			new HydrothermalVentFeature(NoneFeatureConfiguration.CODEC)
-		);
-
 	public static final Feature<SoftCoralClumpConfiguration> SOFT_CORAL_CLUMP =
 		Registry.register(
 			BuiltInRegistries.FEATURE,

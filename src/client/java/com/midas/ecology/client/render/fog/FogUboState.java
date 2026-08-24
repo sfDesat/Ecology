@@ -38,7 +38,7 @@ public final class FogUboState {
 				.attributeProbe()
 				.getValue(EnvironmentAttributes.WATER_FOG_COLOR, 1.0F);
 			if (waterFog != null) {
-				float scale = 1.0F - EcologyClientConfig.get().clampedFogTintDarkness();
+				float scale = 1.0F - EcologyClientConfig.get().lookingAtWater.clampedFogDarkness();
 				WATER_FOG.set(
 					ARGB.redFloat(waterFog) * scale,
 					ARGB.greenFloat(waterFog) * scale,
@@ -49,7 +49,7 @@ public final class FogUboState {
 			}
 		}
 
-		float scale = 1.0F - EcologyClientConfig.get().clampedFogTintDarkness();
+		float scale = 1.0F - EcologyClientConfig.get().lookingAtWater.clampedFogDarkness();
 		WATER_FOG.set(activeFogColor.x * scale, activeFogColor.y * scale, activeFogColor.z * scale, activeFogColor.w);
 	}
 

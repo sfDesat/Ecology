@@ -47,46 +47,49 @@ public final class DistantWaterDiagnostics {
 
 	public static String statusSummary() {
 		EcologyClientConfig config = EcologyClientConfig.get();
+		EcologyClientConfig.LookingAtWater looking = config.lookingAtWater;
+		EcologyClientConfig.Swimming swimming = config.swimming;
+		EcologyClientConfig.OpaqueWater opaque = config.opaqueWater;
 		return "mode=" + DistantWaterShaderSupport.shaderMode()
-			+ " configured=" + config.distantWaterMode
+			+ " configured=" + config.mode
 			+ " effective=" + config.effectiveMode()
-			+ " distance=" + config.distanceOpacityEnabled
-			+ " irisAutoDisable=" + config.irisAutoDisable
+			+ " distance=" + opaque.distance
+			+ " pauseWithIris=" + config.pauseWithIris
 			+ " irisPack=" + IrisCompat.isShaderPackInUse()
 			+ " sodium=" + SodiumCompat.isLoaded()
 			+ " overlay=" + DistantWaterShaderSupport.sodiumOverlayActive()
 			+ " fabulous=" + FogTint.isFabulousTransparency()
-			+ " strength=" + config.clampedStrength()
-			+ " start=" + config.clampedStart()
-			+ " end=" + config.clampedEnd()
-			+ " fresnel=" + config.fresnelEnabled
-			+ " fresnelStr=" + config.clampedFresnelStrength()
-			+ " fresnelPow=" + config.clampedFresnelPower()
-			+ " fill=" + config.clampedFogTintFillStrength()
-			+ " sightStart=" + config.clampedSightFogStart()
-			+ " sightEnd=" + config.clampedSightFogEnd()
-			+ " sightPct=" + (config.sightFogUseRenderDistancePercent
-				? config.clampedSightFogStartPercent() + "-" + config.clampedSightFogEndPercent() + "%"
+			+ " strength=" + opaque.clampedStrength()
+			+ " start=" + opaque.clampedStart()
+			+ " end=" + opaque.clampedEnd()
+			+ " angle=" + opaque.angle
+			+ " angleStr=" + opaque.clampedAngleStrength()
+			+ " angleCurve=" + opaque.clampedAngleCurve()
+			+ " fill=" + looking.clampedFill()
+			+ " sightStart=" + looking.clampedStartBlocks()
+			+ " sightEnd=" + looking.clampedEndBlocks()
+			+ " sightPct=" + (looking.usePercent
+				? looking.clampedStartPercent() + "-" + looking.clampedEndPercent() + "%"
 				: "off")
-			+ " fogDark=" + config.clampedFogTintDarkness()
-			+ " surfaceFog=" + config.clampedSurfaceAirFog()
-			+ " uwLight=" + config.clampedUnderwaterLightStart() + "-" + config.clampedUnderwaterLightEnd()
-			+ " swimFallback=" + config.clampedSwimFogFallback()
-			+ " swimFog=" + config.swimFogKelpCanopy + "/" + config.swimFogColdPolarShelf
-			+ "/" + config.swimFogTemperateShelf + "/" + config.swimFogIceOpenings
-			+ "/" + config.swimFogSubtropical + "/" + config.swimFogDeepBasin
-			+ "/" + config.swimFogTropicalClear + "/" + config.swimFogLagoon
-			+ "/" + config.swimFogOpenOcean
-			+ " dbgTops=" + config.debugHighlightMarkedTops
-			+ " dbgFresnel=" + config.debugHighlightFresnel
-			+ " dbgFogRemap=" + config.debugHighlightFogRemap
-			+ " dbgAll=" + config.debugHighlightAllTranslucent
+			+ " fogDark=" + looking.clampedFogDarkness()
+			+ " surfaceFog=" + looking.clampedHorizonFog()
+			+ " uwLight=" + swimming.clampedBrightUntil() + "-" + swimming.clampedDarkAt()
+			+ " swimFallback=" + swimming.clampedOtherWater()
+			+ " swimFog=" + swimming.kelpForest + "/" + swimming.cold
+			+ "/" + swimming.temperate + "/" + swimming.iceOpenings
+			+ "/" + swimming.lukewarm + "/" + swimming.deepBasin
+			+ "/" + swimming.warm + "/" + swimming.lagoon
+			+ "/" + swimming.openOcean
+			+ " dbgTops=" + config.debug.highlightMarkedWater
+			+ " dbgAngle=" + config.debug.highlightAngle
+			+ " dbgSeeThrough=" + config.debug.highlightSeeThrough
+			+ " dbgAll=" + config.debug.highlightTranslucent
 			+ " packDir=" + Files.isDirectory(DistantWaterSettingsPack.packRoot());
 	}
 
 	public static void log(String reason) {
 		EcologyClientConfig config = EcologyClientConfig.get();
-		if (!config.debugLogging) {
+		if (!config.debug.logging) {
 			return;
 		}
 		EcologyMod.LOGGER.info("[Ecology DistantWater] {} -> {}", reason, statusSummary());
@@ -168,7 +171,7 @@ public final class DistantWaterDiagnostics {
 				EcologyMod.LOGGER.warn("[Ecology DistantWater] could not read transparency.fsh contents", e);
 			}
 		});
-		if (!fabulous && config.distantWaterMode == DistantWaterMode.FOG_REMAP) {
+		if (!fabulous && config.mode == DistantWaterMode.FOG_REMAP) {
 			EcologyMod.LOGGER.warn("[Ecology DistantWater] Fog tint needs Improved Transparency (Fabulous). Current graphics will not encode or composite Fog tint.");
 		}
 		if (client.getResourcePackRepository() != null) {

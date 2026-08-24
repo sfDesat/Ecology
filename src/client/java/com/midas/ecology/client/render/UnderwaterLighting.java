@@ -66,15 +66,15 @@ public final class UnderwaterLighting {
 
 	/**
 	 * Mix extra sky-colored ambient into the lightmap so sky-light 0 is not fully black
-	 * until {@link EcologyClientConfig#clampedUnderwaterLightEnd()} blocks of water overhead.
+	 * until {@link EcologyClientConfig.Swimming#clampedDarkAt()} blocks of water overhead.
 	 */
 	public static void boostLightmap(LightmapRenderState state, Minecraft client) {
 		if (!shouldApply() || state == null) {
 			return;
 		}
 		EcologyClientConfig config = EcologyClientConfig.get();
-		float start = config.clampedUnderwaterLightStart();
-		float end = config.clampedUnderwaterLightEnd();
+		float start = config.swimming.clampedBrightUntil();
+		float end = config.swimming.clampedDarkAt();
 		float depth = waterOverhead(client);
 		float fade = smoothstep(start, end, depth);
 		float keep = 1.0F - fade;

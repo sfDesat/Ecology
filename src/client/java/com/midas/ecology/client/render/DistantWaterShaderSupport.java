@@ -8,6 +8,7 @@ import com.midas.ecology.client.config.EcologyClientConfig;
 import com.midas.ecology.client.render.fog.FogTint;
 import com.midas.ecology.client.render.fog.FogTintMatrices;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.repository.RepositorySource;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,7 +59,10 @@ public final class DistantWaterShaderSupport {
 		EcologyClientConfig.ensureLoaded();
 		syncFromConfig(true);
 		DistantWaterDiagnostics.log("applyConfigAndReload");
-		EcologyClientConfig.notifyPlayer("Ecology distant water: " + DistantWaterDiagnostics.statusSummary());
+		EcologyClientConfig.notifyPlayer(Component.translatable(
+			"ecology.config.chat.applied",
+			DistantWaterDiagnostics.statusSummary()
+		));
 		FABULOUS_WARN_SENT.set(false);
 		maybeWarnMissingFabulous();
 	}
@@ -80,9 +84,9 @@ public final class DistantWaterShaderSupport {
 	public static void maybeWarnMissingFabulous() {
 		EcologyClientConfig config = EcologyClientConfig.get();
 		Minecraft client = Minecraft.getInstance();
-		boolean fogTintSelected = config.distantWaterMode == DistantWaterMode.FOG_REMAP;
+		boolean fogTintSelected = config.mode == DistantWaterMode.FOG_REMAP;
 		boolean fabulous = FogTint.isFabulousTransparency();
-		boolean shouldWarn = config.warnMissingImprovedTransparency
+		boolean shouldWarn = config.warnIfFabulousOff
 			&& fogTintSelected
 			&& !fabulous
 			&& client != null
@@ -95,9 +99,7 @@ public final class DistantWaterShaderSupport {
 		if (!FABULOUS_WARN_SENT.compareAndSet(false, true)) {
 			return;
 		}
-		EcologyClientConfig.notifyPlayerAlways(
-			"Ecology Fog tint needs Improved Transparency (Fabulous graphics). Enable it in Video Settings, or switch distant water to Opaque / Off. You can disable this reminder in Ecology → Fog tint."
-		);
+		EcologyClientConfig.notifyPlayerAlways(Component.translatable("ecology.config.chat.fabulous"));
 	}
 
 	/**
@@ -108,24 +110,24 @@ public final class DistantWaterShaderSupport {
 	public static boolean syncFromConfig(boolean reloadIfChanged) {
 		EcologyClientConfig config = EcologyClientConfig.get();
 		DistantWaterMode mode = shaderMode();
-		boolean distance = config.distanceOpacityEnabled;
-		float strength = config.clampedStrength();
-		float start = config.clampedStart();
-		float end = config.clampedEnd();
-		boolean fresnel = config.fresnelEnabled;
-		float fresnelStrength = config.clampedFresnelStrength();
-		float fresnelPower = config.clampedFresnelPower();
-		float fogTintFill = config.clampedFogTintFillStrength();
-		float sightFogStart = config.clampedSightFogStart();
-		float sightFogEnd = config.clampedSightFogEnd();
-		boolean sightEndUsePercent = config.sightFogUseRenderDistancePercent;
-		float sightStartPercent = config.clampedSightFogStartPercent() / 100.0F;
-		float sightEndPercent = config.clampedSightFogEndPercent() / 100.0F;
-		boolean highlightTops = config.debugHighlightMarkedTops;
-		boolean highlightFresnel = config.debugHighlightFresnel;
-		boolean highlightAll = config.debugHighlightAllTranslucent;
-		boolean highlightFogRemap = config.debugHighlightFogRemap;
-		float surfaceAirFog = config.clampedSurfaceAirFog();
+		boolean distance = config.opaqueWater.distance;
+		float strength = config.opaqueWater.clampedStrength();
+		float start = config.opaqueWater.clampedStart();
+		float end = config.opaqueWater.clampedEnd();
+		boolean fresnel = config.opaqueWater.angle;
+		float fresnelStrength = config.opaqueWater.clampedAngleStrength();
+		float fresnelPower = config.opaqueWater.clampedAngleCurve();
+		float fogTintFill = config.lookingAtWater.clampedFill();
+		float sightFogStart = config.lookingAtWater.clampedStartBlocks();
+		float sightFogEnd = config.lookingAtWater.clampedEndBlocks();
+		boolean sightEndUsePercent = config.lookingAtWater.usePercent;
+		float sightStartPercent = config.lookingAtWater.clampedStartPercent() / 100.0F;
+		float sightEndPercent = config.lookingAtWater.clampedEndPercent() / 100.0F;
+		boolean highlightTops = config.debug.highlightMarkedWater;
+		boolean highlightFresnel = config.debug.highlightAngle;
+		boolean highlightAll = config.debug.highlightTranslucent;
+		boolean highlightFogRemap = config.debug.highlightSeeThrough;
+		float surfaceAirFog = config.lookingAtWater.clampedHorizonFog();
 		boolean overlay = SodiumCompat.isLoaded() && mode != DistantWaterMode.OFF;
 		boolean fabulous = FogTint.isFabulousTransparency();
 		String signature = mode + "|" + distance + "|" + strength + "|" + start + "|" + end
@@ -133,7 +135,7 @@ public final class DistantWaterShaderSupport {
 			+ "|" + fogTintFill + "|" + sightFogStart + "|" + sightFogEnd
 			+ "|" + sightEndUsePercent + "|" + sightStartPercent + "|" + sightEndPercent
 			+ "|" + surfaceAirFog
-			+ "|" + config.irisAutoDisable
+			+ "|" + config.pauseWithIris
 			+ "|" + IrisCompat.isShaderPackInUse()
 			+ "|" + overlay
 			+ "|" + fabulous
@@ -162,10 +164,8 @@ public final class DistantWaterShaderSupport {
 		boolean shouldReload = reloadIfChanged && previous != null && !previous.isEmpty();
 		if (shouldReload) {
 			scheduleReload("signatureChange mode=" + mode);
-			if (config.debugLogging && (highlightTops || highlightFresnel || highlightAll || highlightFogRemap)) {
-				EcologyClientConfig.notifyPlayer(
-					"Ecology debug ON — yellow→blue=distance, green→red=fresnel, pink=behind-water Fog tint (Fabulous), cyan=any translucent."
-				);
+			if (config.debug.logging && (highlightTops || highlightFresnel || highlightAll || highlightFogRemap)) {
+				EcologyClientConfig.notifyPlayer(Component.translatable("ecology.config.chat.debug_on"));
 			}
 		} else {
 			overlayLive = overlayDesired;

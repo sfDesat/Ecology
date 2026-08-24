@@ -2,6 +2,9 @@ package com.midas.ecology.client.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.InstanceCreator;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.midas.ecology.EcologyMod;
 import com.midas.ecology.client.compat.IrisCompat;
 import com.midas.ecology.worldgen.EcologyBiomes;
@@ -18,144 +21,27 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public final class EcologyClientConfig {
-	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+	private static final Gson GSON = new GsonBuilder()
+		.setPrettyPrinting()
+		.registerTypeAdapter(EcologyClientConfig.class, (InstanceCreator<EcologyClientConfig>) type -> new EcologyClientConfig())
+		.registerTypeAdapter(LookingAtWater.class, (InstanceCreator<LookingAtWater>) type -> new LookingAtWater())
+		.registerTypeAdapter(Swimming.class, (InstanceCreator<Swimming>) type -> new Swimming())
+		.registerTypeAdapter(OpaqueWater.class, (InstanceCreator<OpaqueWater>) type -> new OpaqueWater())
+		.registerTypeAdapter(Debug.class, (InstanceCreator<Debug>) type -> new Debug())
+		.create();
 	private static final Path PATH = FabricLoader.getInstance().getConfigDir().resolve("ecology-client.json");
 
 	private static EcologyClientConfig instance = new EcologyClientConfig();
 	private static boolean loaded;
 	private static String lastSavedJson = "";
 
-	/**
-	 * Distant-water fix mode. Default {@link DistantWaterMode#FOG_REMAP} for new installs.
-	 * Null on disk means legacy config — migrated from {@link #waterShaderEnabled}.
-	 */
-	public DistantWaterMode distantWaterMode = DistantWaterMode.FOG_REMAP;
-	/** Distance-based opacity component (OPACITY mode only). */
-	public boolean distanceOpacityEnabled = true;
-	public float distantWaterOpacityStrength = 1.0F;
-	/** Lower = opacity starts closer to the player (fraction of FogRenderDistanceEnd). */
-	public float distantWaterOpacityStart = 0.0F;
-	/** Where opacity reaches full strength (fraction of FogRenderDistanceEnd). Must be &gt;= start. */
-	public float distantWaterOpacityEnd = 0.5F;
-	public boolean fresnelEnabled = true;
-	/** Added on top of distance opacity (combined clamped to 1). */
-	public float fresnelStrength = 1.0F;
-	/**
-	 * Curve for glancing angle: {@code pow(grazing, power)}.
-	 * Lower = opacity spreads to more angles; higher = only near-horizon.
-	 */
-	public float fresnelPower = 0.75F;
-	/**
-	 * Fog tint: how hard behind-water fill / empty fill applies (0-1). JSON name kept.
-	 */
-	public float fogRemapBiasStrength = 1.0F;
-	/**
-	 * Fog tint: blocks from camera where behind-water sight fog begins.
-	 */
-	public float sightFogStart = 16.0F;
-	/**
-	 * Fog tint: blocks from camera where behind-water sight fog is full (when not using render-distance %).
-	 */
-	public float sightFogEnd = 128.0F;
-	/**
-	 * Fog tint: when true, sight start and end are percents of fog render distance
-	 * instead of the block distances.
-	 */
-	public boolean sightFogUseRenderDistancePercent = true;
-	/**
-	 * Fog tint: percent of fog render distance (1-100) used as sight end when
-	 * {@link #sightFogUseRenderDistancePercent} is true.
-	 */
-	public int sightFogEndPercent = 70;
-	/**
-	 * Fog tint: percent of fog render distance (0-100) used as sight start when
-	 * {@link #sightFogUseRenderDistancePercent} is true.
-	 */
-	public int sightFogStartPercent = 10;
-	/**
-	 * Fog tint: darkens biome water fog color. 0 = as-is, 1 = black.
-	 */
-	public float fogTintDarkness = 0.55F;
-	/**
-	 * Fog tint: how hard air fog sits on the water surface (0-1).
-	 * Restores land-matching horizon fog after behind-water unfog.
-	 */
-	public float surfaceAirFog = 1.0F;
-	/**
-	 * Blocks of water overhead before extra underwater ambient starts fading.
-	 */
-	public float underwaterLightStart = 10.0F;
-	/**
-	 * Blocks of water overhead where extra ambient is gone (vanilla-dark).
-	 */
-	public float underwaterLightEnd = 64.0F;
-	/**
-	 * Seconds to blend swim view distance when moving between water types.
-	 * 0 = instant. Does not fade when entering or leaving water.
-	 */
-	public float swimFogFadeSeconds = 1.0F;
-	/**
-	 * When true, Ecology replaces vanilla short underwater fog with the biome swim distances below.
-	 * When false, vanilla underwater fog distance is kept (brightness settings still apply).
-	 */
-	public boolean swimFogDistanceEnabled = true;
-	/**
-	 * Fallback swim view distance for rivers, lakes, and unknown biomes.
-	 * Does not scale with render distance.
-	 */
-	public float underwaterFogEnd = 34.0F;
-	/** Kelp Forest. */
-	public float swimFogKelpCanopy = 36.0F;
-	/** Frozen / cold shelf: Frozen Ocean, Sympagic Zone, Cold Ocean, Cold Eelgrass (+ coastal shallows). */
-	public float swimFogColdPolarShelf = 40.0F;
-	/** Temperate shelf: Ocean, Seagrass Meadow, Rocky Reef, Sand Wave Field (+ coastal shallows). */
-	public float swimFogTemperateShelf = 44.0F;
-	/** Ice Edge and Polynya. */
-	public float swimFogIceOpenings = 48.0F;
-	/** Lukewarm Ocean, Subtropical Seagrass, Patch Reef, Soft Coral Garden (+ coastal shallows). */
-	public float swimFogSubtropical = 50.0F;
-	/** Deep Basin (and leftover vanilla deep oceans). */
-	public float swimFogDeepBasin = 52.0F;
-	/** Warm Ocean, Coral Reef, Tropical Seagrass (+ coastal shallows). */
-	public float swimFogTropicalClear = 56.0F;
-	/** Lagoon. */
-	public float swimFogLagoon = 60.0F;
-	/** Open Ocean pelagic layer. */
-	public float swimFogOpenOcean = 60.0F;
-	/**
-	 * When true, Ecology distant-water effects turn off while an Iris shader pack is active.
-	 * When false, Ecology keeps applying even with Iris (may conflict).
-	 */
-	public boolean irisAutoDisable = true;
-	public boolean debugLogging = false;
-	/** Paint marked water faces yellow→blue by distance (opaque-water debug). */
-	public boolean debugHighlightMarkedTops = false;
-	/** Paint marked water faces green→yellow→red by view angle (fresnel). */
-	public boolean debugHighlightFresnel = false;
-	/** Paint ANY partial-alpha terrain cyan — proves Ecology terrain.fsh is running at all. */
-	public boolean debugHighlightAllTranslucent = false;
-	/** Fog tint: pink = behind-water sight fog / empty-behind mask. */
-	public boolean debugHighlightFogRemap = false;
-	/**
-	 * Fog tint: chat once when Fog tint is selected but Improved Transparency (Fabulous) is off.
-	 */
-	public boolean warnMissingImprovedTransparency = true;
-
-	/** Legacy master switch; migrated into {@link #distantWaterMode} on load. */
-	private Boolean waterShaderEnabled;
-	/** Legacy field from older configs; migrated into {@link #waterShaderEnabled} then mode. */
-	private Boolean distantWaterOpacityEnabled;
-	/** Legacy Fog tint fractions; ignored after sightFog* migration. */
-	@SuppressWarnings("unused")
-	private Float fogTintDistanceStart;
-	@SuppressWarnings("unused")
-	private Float fogTintDistanceEnd;
-	/** Legacy behind-water sight fields; migrated into {@code sightFog*}. */
-	private Float underwaterSightStart;
-	private Float underwaterSightEnd;
-	private Boolean underwaterSightEndUseRenderDistancePercent;
-	private Integer underwaterSightEndPercent;
-	private Integer underwaterSightStartPercent;
+	public DistantWaterMode mode = DistantWaterMode.FOG_REMAP;
+	public boolean pauseWithIris = true;
+	public boolean warnIfFabulousOff = true;
+	public LookingAtWater lookingAtWater = new LookingAtWater();
+	public Swimming swimming = new Swimming();
+	public OpaqueWater opaqueWater = new OpaqueWater();
+	public Debug debug = new Debug();
 
 	private EcologyClientConfig() {
 	}
@@ -180,24 +66,26 @@ public final class EcologyClientConfig {
 		if (Files.isRegularFile(PATH)) {
 			try {
 				diskJson = Files.readString(PATH);
-				EcologyClientConfig loadedConfig = GSON.fromJson(diskJson, EcologyClientConfig.class);
+				JsonObject json = JsonParser.parseString(diskJson).getAsJsonObject();
+				migrateLegacyJson(json);
+				EcologyClientConfig loadedConfig = GSON.fromJson(json, EcologyClientConfig.class);
 				if (loadedConfig != null) {
-					loadedConfig.migrateLegacyFields(diskJson);
 					instance = loadedConfig;
 				}
 			} catch (Exception e) {
 				EcologyMod.LOGGER.error("Failed to load ecology-client.json, using defaults", e);
-				notifyPlayer("Ecology: failed to load config, using defaults (see log)");
+				notifyPlayer(Component.translatable("ecology.config.chat.load_failed"));
 			}
-		} else if (instance.debugLogging) {
+		} else if (instance.debug.logging) {
 			EcologyMod.LOGGER.info("No ecology-client.json yet; creating defaults at {}", PATH.toAbsolutePath());
 		}
+		instance.ensureSections();
+		instance.swimming.migrateOldDistanceTables();
 		instance.clamp();
 		loaded = true;
 		if (diskJson != null) {
 			lastSavedJson = diskJson;
 		}
-		// Only rewrite disk when clamp/migration changed content.
 		saveIfChanged();
 	}
 
@@ -206,16 +94,8 @@ public final class EcologyClientConfig {
 	}
 
 	private static void saveIfChanged() {
+		instance.ensureSections();
 		instance.clamp();
-		instance.waterShaderEnabled = null;
-		instance.distantWaterOpacityEnabled = null;
-		instance.fogTintDistanceStart = null;
-		instance.fogTintDistanceEnd = null;
-		instance.underwaterSightStart = null;
-		instance.underwaterSightEnd = null;
-		instance.underwaterSightEndUseRenderDistancePercent = null;
-		instance.underwaterSightEndPercent = null;
-		instance.underwaterSightStartPercent = null;
 		String json = GSON.toJson(instance);
 		if (json.equals(lastSavedJson) && Files.isRegularFile(PATH)) {
 			return;
@@ -226,239 +106,140 @@ public final class EcologyClientConfig {
 				writer.write(json);
 			}
 			lastSavedJson = json;
-			if (instance.debugLogging) {
+			if (instance.debug.logging) {
 				EcologyMod.LOGGER.info("Saved Ecology client config to {}", PATH.toAbsolutePath());
 			}
 		} catch (IOException e) {
 			EcologyMod.LOGGER.error("Failed to save ecology-client.json", e);
-			notifyPlayer("Ecology: failed to save config (see log)");
+			notifyPlayer(Component.translatable("ecology.config.chat.save_failed"));
 		}
 	}
 
 	/**
-	 * Legacy configs used {@code waterShaderEnabled} / {@code distantWaterOpacityEnabled} without a mode.
-	 * Those map to {@link DistantWaterMode#OPACITY} (or OFF) so existing installs keep opacity until changed.
-	 * New installs (no file) keep default {@link DistantWaterMode#FOG_REMAP}.
+	 * Flattened ecology-client.json from older builds is rewritten into the nested layout
+	 * before Gson binds fields. Unknown keys are dropped on the next save.
 	 */
-	private void migrateLegacyFields(String diskJson) {
-		if (this.distantWaterOpacityEnabled != null && this.waterShaderEnabled == null) {
-			this.waterShaderEnabled = this.distantWaterOpacityEnabled;
+	private static void migrateLegacyJson(JsonObject json) {
+		if (!json.has("mode")) {
+			if (json.has("distantWaterMode")) {
+				json.add("mode", json.get("distantWaterMode"));
+			} else {
+				boolean legacyOn = true;
+				if (json.has("distantWaterOpacityEnabled") && !json.has("waterShaderEnabled")) {
+					legacyOn = json.get("distantWaterOpacityEnabled").getAsBoolean();
+				} else if (json.has("waterShaderEnabled")) {
+					legacyOn = json.get("waterShaderEnabled").getAsBoolean();
+				}
+				json.addProperty("mode", legacyOn ? "opaque" : "off");
+			}
 		}
-		boolean modeInJson = diskJson != null && diskJson.contains("\"distantWaterMode\"");
-		if (!modeInJson) {
-			boolean legacyOn = this.waterShaderEnabled == null || this.waterShaderEnabled;
-			this.distantWaterMode = legacyOn ? DistantWaterMode.OPACITY : DistantWaterMode.OFF;
-		} else if (this.distantWaterMode == null) {
-			this.distantWaterMode = DistantWaterMode.FOG_REMAP;
+		renameModeValue(json, "mode");
+
+		if (!json.has("pauseWithIris") && json.has("irisAutoDisable")) {
+			json.add("pauseWithIris", json.get("irisAutoDisable"));
 		}
-		boolean hasSight = diskJson != null && (diskJson.contains("\"sightFogEnd\"") || diskJson.contains("\"underwaterSightEnd\""));
-		if (!hasSight && this.sightFogEnd <= 0.0F) {
-			this.sightFogStart = 16.0F;
-			this.sightFogEnd = 128.0F;
+		if (!json.has("warnIfFabulousOff") && json.has("warnMissingImprovedTransparency")) {
+			json.add("warnIfFabulousOff", json.get("warnMissingImprovedTransparency"));
 		}
-		if (diskJson != null && !diskJson.contains("\"sightFogStart\"") && this.underwaterSightStart != null) {
-			this.sightFogStart = this.underwaterSightStart;
+
+		if (!json.has("lookingAtWater")) {
+			JsonObject looking = new JsonObject();
+			move(json, "surfaceAirFog", looking, "horizonFog");
+			move(json, "sightFogUseRenderDistancePercent", looking, "usePercent");
+			move(json, "sightFogStartPercent", looking, "startPercent");
+			move(json, "underwaterSightStartPercent", looking, "startPercent");
+			move(json, "sightFogEndPercent", looking, "endPercent");
+			move(json, "underwaterSightEndPercent", looking, "endPercent");
+			move(json, "sightFogStart", looking, "startBlocks");
+			move(json, "underwaterSightStart", looking, "startBlocks");
+			move(json, "sightFogEnd", looking, "endBlocks");
+			move(json, "underwaterSightEnd", looking, "endBlocks");
+			move(json, "fogRemapBiasStrength", looking, "fill");
+			move(json, "fogTintDarkness", looking, "fogDarkness");
+			json.add("lookingAtWater", looking);
 		}
-		if (diskJson != null && !diskJson.contains("\"sightFogEnd\"") && this.underwaterSightEnd != null) {
-			this.sightFogEnd = this.underwaterSightEnd;
+
+		if (!json.has("swimming")) {
+			JsonObject swimming = new JsonObject();
+			move(json, "swimFogDistanceEnabled", swimming, "customDistance");
+			move(json, "swimFogFadeSeconds", swimming, "fadeSeconds");
+			move(json, "underwaterLightStart", swimming, "brightUntil");
+			move(json, "underwaterLightEnd", swimming, "darkAt");
+			move(json, "swimFogKelpCanopy", swimming, "kelpForest");
+			move(json, "swimFogColdPolarShelf", swimming, "cold");
+			move(json, "swimFogTemperateShelf", swimming, "temperate");
+			move(json, "swimFogIceOpenings", swimming, "iceOpenings");
+			move(json, "swimFogSubtropical", swimming, "lukewarm");
+			move(json, "swimFogDeepBasin", swimming, "deepBasin");
+			move(json, "swimFogTropicalClear", swimming, "warm");
+			move(json, "swimFogLagoon", swimming, "lagoon");
+			move(json, "swimFogOpenOcean", swimming, "openOcean");
+			move(json, "underwaterFogEnd", swimming, "otherWater");
+			json.add("swimming", swimming);
 		}
-		if (diskJson != null && !diskJson.contains("\"sightFogUseRenderDistancePercent\"")
-			&& this.underwaterSightEndUseRenderDistancePercent != null) {
-			this.sightFogUseRenderDistancePercent = this.underwaterSightEndUseRenderDistancePercent;
+
+		if (!json.has("opaqueWater")) {
+			JsonObject opaque = new JsonObject();
+			move(json, "distanceOpacityEnabled", opaque, "distance");
+			move(json, "distantWaterOpacityStrength", opaque, "strength");
+			move(json, "distantWaterOpacityStart", opaque, "start");
+			move(json, "distantWaterOpacityEnd", opaque, "end");
+			move(json, "fresnelEnabled", opaque, "angle");
+			move(json, "fresnelStrength", opaque, "angleStrength");
+			move(json, "fresnelPower", opaque, "angleCurve");
+			json.add("opaqueWater", opaque);
 		}
-		if (diskJson != null && !diskJson.contains("\"sightFogEndPercent\"") && this.underwaterSightEndPercent != null) {
-			this.sightFogEndPercent = this.underwaterSightEndPercent;
+
+		if (!json.has("debug")) {
+			JsonObject debug = new JsonObject();
+			move(json, "debugLogging", debug, "logging");
+			move(json, "debugHighlightAllTranslucent", debug, "highlightTranslucent");
+			move(json, "debugHighlightFogRemap", debug, "highlightSeeThrough");
+			move(json, "debugHighlightMarkedTops", debug, "highlightMarkedWater");
+			move(json, "debugHighlightFresnel", debug, "highlightAngle");
+			json.add("debug", debug);
 		}
-		if (diskJson != null && !diskJson.contains("\"sightFogStartPercent\"") && this.underwaterSightStartPercent != null) {
-			this.sightFogStartPercent = this.underwaterSightStartPercent;
-		}
-		migrateSwimFogRegionTable();
 	}
 
-	/** Push saved region tables forward when they still match an older default set. */
-	private void migrateSwimFogRegionTable() {
-		boolean firstTable = Math.round(this.swimFogKelpCanopy) == 16
-			&& Math.round(this.swimFogColdPolarShelf) == 20
-			&& Math.round(this.swimFogTemperateShelf) == 24
-			&& Math.round(this.swimFogIceOpenings) == 28
-			&& Math.round(this.swimFogSubtropical) == 30
-			&& Math.round(this.swimFogDeepBasin) == 32
-			&& Math.round(this.swimFogTropicalClear) == 36
-			&& Math.round(this.swimFogLagoon) == 40;
-		boolean secondTable = Math.round(this.swimFogKelpCanopy) == 26
-			&& Math.round(this.swimFogColdPolarShelf) == 30
-			&& Math.round(this.swimFogTemperateShelf) == 34
-			&& Math.round(this.swimFogIceOpenings) == 38
-			&& Math.round(this.swimFogSubtropical) == 40
-			&& Math.round(this.swimFogDeepBasin) == 42
-			&& Math.round(this.swimFogTropicalClear) == 46
-			&& Math.round(this.swimFogLagoon) == 50;
-		if (firstTable || secondTable) {
-			this.swimFogKelpCanopy = 36.0F;
-			this.swimFogColdPolarShelf = 40.0F;
-			this.swimFogTemperateShelf = 44.0F;
-			this.swimFogIceOpenings = 48.0F;
-			this.swimFogSubtropical = 50.0F;
-			this.swimFogDeepBasin = 52.0F;
-			this.swimFogTropicalClear = 56.0F;
-			this.swimFogLagoon = 60.0F;
+	private static void renameModeValue(JsonObject json, String key) {
+		if (!json.has(key) || !json.get(key).isJsonPrimitive()) {
+			return;
 		}
-		if (Math.round(this.swimFogOpenOcean) == 50) {
-			this.swimFogOpenOcean = 60.0F;
-		}
-		if (Math.round(this.underwaterFogEnd) == 24) {
-			this.underwaterFogEnd = 34.0F;
+		String mapped = switch (json.get(key).getAsString()) {
+			case "FOG_REMAP", "fog_tint" -> "fog_tint";
+			case "OPACITY", "opaque" -> "opaque";
+			case "OFF", "off" -> "off";
+			default -> "fog_tint";
+		};
+		json.addProperty(key, mapped);
+	}
+
+	private static void move(JsonObject from, String oldKey, JsonObject to, String newKey) {
+		if (from.has(oldKey) && !to.has(newKey)) {
+			to.add(newKey, from.get(oldKey));
 		}
 	}
 
 	public DistantWaterMode effectiveMode() {
-		DistantWaterMode mode = this.distantWaterMode != null ? this.distantWaterMode : DistantWaterMode.FOG_REMAP;
-		if (mode == DistantWaterMode.OFF) {
+		DistantWaterMode resolved = this.mode != null ? this.mode : DistantWaterMode.FOG_REMAP;
+		if (resolved == DistantWaterMode.OFF) {
 			return DistantWaterMode.OFF;
 		}
-		if (this.irisAutoDisable && IrisCompat.isShaderPackInUse()) {
+		if (this.pauseWithIris && IrisCompat.isShaderPackInUse()) {
 			return DistantWaterMode.OFF;
 		}
-		return mode;
-	}
-
-	public float clampedStrength() {
-		return clamp01(this.distantWaterOpacityStrength);
-	}
-
-	public float clampedStart() {
-		return clamp01(this.distantWaterOpacityStart);
-	}
-
-	/** Full-opacity distance; always &gt;= {@link #clampedStart()}. */
-	public float clampedEnd() {
-		return Math.max(clampedStart(), clamp01(this.distantWaterOpacityEnd));
-	}
-
-	public float clampedFresnelStrength() {
-		return clamp01(this.fresnelStrength);
-	}
-
-	public float clampedFresnelPower() {
-		return Math.max(0.25F, Math.min(8.0F, this.fresnelPower));
-	}
-
-	public float clampedFogRemapBiasStrength() {
-		return clamp01(this.fogRemapBiasStrength);
-	}
-
-	/** UI alias for {@link #clampedFogRemapBiasStrength()} (water fill strength). */
-	public float clampedFogTintFillStrength() {
-		return clampedFogRemapBiasStrength();
-	}
-
-	public float clampedSightFogStart() {
-		return Math.max(0.0F, Math.min(256.0F, Math.round(this.sightFogStart)));
-	}
-
-	/** Block-mode sight end; always &gt;= start + 1. */
-	public float clampedSightFogEnd() {
-		float start = clampedSightFogStart();
-		return Math.max(start + 1.0F, Math.min(256.0F, Math.round(this.sightFogEnd)));
-	}
-
-	public int clampedSightFogEndPercent() {
-		return Math.max(1, Math.min(100, this.sightFogEndPercent));
-	}
-
-	public int clampedSightFogStartPercent() {
-		int end = clampedSightFogEndPercent();
-		return Math.max(0, Math.min(end - 1, this.sightFogStartPercent));
-	}
-
-	public float clampedFogTintDarkness() {
-		return clamp01(this.fogTintDarkness);
-	}
-
-	public float clampedSurfaceAirFog() {
-		return clamp01(this.surfaceAirFog);
-	}
-
-	public float clampedUnderwaterLightStart() {
-		return Math.max(0.0F, Math.min(256.0F, Math.round(this.underwaterLightStart)));
-	}
-
-	/** Full-black extra-ambient depth; always >= start + 1. */
-	public float clampedUnderwaterLightEnd() {
-		float start = clampedUnderwaterLightStart();
-		return Math.max(start + 1.0F, Math.min(256.0F, Math.round(this.underwaterLightEnd)));
-	}
-
-	public float clampedUnderwaterFogEnd() {
-		return clampSwimFog(this.underwaterFogEnd);
-	}
-
-	/** Alias for {@link #clampedUnderwaterFogEnd()} — swim fallback, not Fog tint. */
-	public float clampedSwimFogFallback() {
-		return clampedUnderwaterFogEnd();
-	}
-
-	public float clampedSwimFogFadeSeconds() {
-		return Math.max(0.0F, Math.min(5.0F, this.swimFogFadeSeconds));
-	}
-
-	/** Swim fog end for the biome at the camera. Unknown water uses {@link #underwaterFogEnd}. */
-	public float clampedSwimFogEnd(Holder<Biome> biome) {
-		if (biome == null) {
-			return clampedUnderwaterFogEnd();
-		}
-		if (biome.is(EcologyBiomes.KELP_FOREST)) {
-			return clampSwimFog(this.swimFogKelpCanopy);
-		}
-		if (biome.is(EcologyBiomes.ICE_EDGE) || biome.is(EcologyBiomes.POLYNYA)) {
-			return clampSwimFog(this.swimFogIceOpenings);
-		}
-		if (biome.is(EcologyBiomes.SYMPAGIC_ZONE)
-			|| biome.is(EcologyBiomes.FROZEN_COASTAL_SHALLOWS)
-			|| biome.is(EcologyBiomes.COLD_COASTAL_SHALLOWS)
-			|| biome.is(EcologyBiomes.COLD_EELGRASS)
-			|| biome.is(Biomes.FROZEN_OCEAN)
-			|| biome.is(Biomes.COLD_OCEAN)) {
-			return clampSwimFog(this.swimFogColdPolarShelf);
-		}
-		if (biome.is(EcologyBiomes.SEAGRASS_MEADOW)
-			|| biome.is(EcologyBiomes.TEMPERATE_ROCKY_REEF)
-			|| biome.is(EcologyBiomes.SAND_WAVE_FIELD)
-			|| biome.is(EcologyBiomes.TEMPERATE_COASTAL_SHALLOWS)
-			|| biome.is(Biomes.OCEAN)) {
-			return clampSwimFog(this.swimFogTemperateShelf);
-		}
-		if (biome.is(EcologyBiomes.SUBTROPICAL_SEAGRASS)
-			|| biome.is(EcologyBiomes.PATCH_REEF)
-			|| biome.is(EcologyBiomes.SOFT_CORAL_GARDEN)
-			|| biome.is(EcologyBiomes.LUKEWARM_COASTAL_SHALLOWS)
-			|| biome.is(Biomes.LUKEWARM_OCEAN)) {
-			return clampSwimFog(this.swimFogSubtropical);
-		}
-		if (biome.is(EcologyBiomes.DEEP_BASIN)
-			|| biome.is(Biomes.DEEP_FROZEN_OCEAN)
-			|| biome.is(Biomes.DEEP_COLD_OCEAN)
-			|| biome.is(Biomes.DEEP_OCEAN)
-			|| biome.is(Biomes.DEEP_LUKEWARM_OCEAN)) {
-			return clampSwimFog(this.swimFogDeepBasin);
-		}
-		if (biome.is(EcologyBiomes.CORAL_REEF)
-			|| biome.is(EcologyBiomes.TROPICAL_SEAGRASS)
-			|| biome.is(EcologyBiomes.TROPICAL_COASTAL_SHALLOWS)
-			|| biome.is(Biomes.WARM_OCEAN)) {
-			return clampSwimFog(this.swimFogTropicalClear);
-		}
-		if (biome.is(EcologyBiomes.LAGOON)) {
-			return clampSwimFog(this.swimFogLagoon);
-		}
-		if (biome.is(EcologyBiomes.OPEN_OCEAN)) {
-			return clampSwimFog(this.swimFogOpenOcean);
-		}
-		return clampedUnderwaterFogEnd();
+		return resolved;
 	}
 
 	public static void notifyPlayer(String message) {
-		if (!get().debugLogging) {
+		if (!get().debug.logging) {
+			return;
+		}
+		sendChat(Component.literal(message));
+	}
+
+	public static void notifyPlayer(Component message) {
+		if (!get().debug.logging) {
 			return;
 		}
 		sendChat(message);
@@ -466,52 +247,282 @@ public final class EcologyClientConfig {
 
 	/** Always send a chat line (ignores debug logging). No-op if not in-game. */
 	public static void notifyPlayerAlways(String message) {
+		sendChat(Component.literal(message));
+	}
+
+	public static void notifyPlayerAlways(Component message) {
 		sendChat(message);
 	}
 
-	private static void sendChat(String message) {
+	private static void sendChat(Component message) {
 		Minecraft client = Minecraft.getInstance();
 		if (client != null && client.player != null) {
-			client.player.sendSystemMessage(Component.literal(message));
+			client.player.sendSystemMessage(message);
+		}
+	}
+
+	private void ensureSections() {
+		if (this.lookingAtWater == null) {
+			this.lookingAtWater = new LookingAtWater();
+		}
+		if (this.swimming == null) {
+			this.swimming = new Swimming();
+		}
+		if (this.opaqueWater == null) {
+			this.opaqueWater = new OpaqueWater();
+		}
+		if (this.debug == null) {
+			this.debug = new Debug();
 		}
 	}
 
 	private void clamp() {
-		if (this.distantWaterMode == null) {
-			this.distantWaterMode = DistantWaterMode.FOG_REMAP;
+		if (this.mode == null) {
+			this.mode = DistantWaterMode.FOG_REMAP;
 		}
-		this.distantWaterOpacityStrength = clamp01(this.distantWaterOpacityStrength);
-		this.distantWaterOpacityStart = clamp01(this.distantWaterOpacityStart);
-		this.distantWaterOpacityEnd = Math.max(this.distantWaterOpacityStart, clamp01(this.distantWaterOpacityEnd));
-		this.fresnelStrength = clamp01(this.fresnelStrength);
-		this.fresnelPower = clampedFresnelPower();
-		this.fogRemapBiasStrength = clamp01(this.fogRemapBiasStrength);
-		this.sightFogStart = Math.max(0.0F, Math.min(256.0F, Math.round(this.sightFogStart)));
-		this.sightFogEnd = Math.max(this.sightFogStart + 1.0F, Math.min(256.0F, Math.round(this.sightFogEnd)));
-		this.sightFogEndPercent = Math.max(1, Math.min(100, this.sightFogEndPercent));
-		this.sightFogStartPercent = Math.max(0, Math.min(this.sightFogEndPercent - 1, this.sightFogStartPercent));
-		this.fogTintDarkness = clamp01(this.fogTintDarkness);
-		this.surfaceAirFog = clamp01(this.surfaceAirFog);
-		this.underwaterLightStart = Math.max(0.0F, Math.min(256.0F, Math.round(this.underwaterLightStart)));
-		this.underwaterLightEnd = Math.max(this.underwaterLightStart + 1.0F, Math.min(256.0F, Math.round(this.underwaterLightEnd)));
-		this.swimFogFadeSeconds = clampedSwimFogFadeSeconds();
-		this.underwaterFogEnd = clampSwimFog(this.underwaterFogEnd);
-		this.swimFogKelpCanopy = clampSwimFog(this.swimFogKelpCanopy);
-		this.swimFogColdPolarShelf = clampSwimFog(this.swimFogColdPolarShelf);
-		this.swimFogTemperateShelf = clampSwimFog(this.swimFogTemperateShelf);
-		this.swimFogIceOpenings = clampSwimFog(this.swimFogIceOpenings);
-		this.swimFogSubtropical = clampSwimFog(this.swimFogSubtropical);
-		this.swimFogDeepBasin = clampSwimFog(this.swimFogDeepBasin);
-		this.swimFogTropicalClear = clampSwimFog(this.swimFogTropicalClear);
-		this.swimFogLagoon = clampSwimFog(this.swimFogLagoon);
-		this.swimFogOpenOcean = clampSwimFog(this.swimFogOpenOcean);
+		this.lookingAtWater.clamp();
+		this.swimming.clamp();
+		this.opaqueWater.clamp();
 	}
 
-	private static float clamp01(float value) {
+	static float clamp01(float value) {
 		return Math.max(0.0F, Math.min(1.0F, value));
 	}
 
-	private static float clampSwimFog(float value) {
+	static float clampSwimFog(float value) {
 		return Math.max(8.0F, Math.min(256.0F, Math.round(value)));
+	}
+
+	public static final class LookingAtWater {
+		public float horizonFog = 1.0F;
+		public boolean usePercent = true;
+		public int startPercent = 10;
+		public int endPercent = 70;
+		public float startBlocks = 16.0F;
+		public float endBlocks = 128.0F;
+		public float fill = 1.0F;
+		public float fogDarkness = 0.55F;
+
+		public float clampedHorizonFog() {
+			return clamp01(this.horizonFog);
+		}
+
+		public float clampedFill() {
+			return clamp01(this.fill);
+		}
+
+		public float clampedFogDarkness() {
+			return clamp01(this.fogDarkness);
+		}
+
+		public float clampedStartBlocks() {
+			return Math.max(0.0F, Math.min(256.0F, Math.round(this.startBlocks)));
+		}
+
+		public float clampedEndBlocks() {
+			float start = clampedStartBlocks();
+			return Math.max(start + 1.0F, Math.min(256.0F, Math.round(this.endBlocks)));
+		}
+
+		public int clampedEndPercent() {
+			return Math.max(1, Math.min(100, this.endPercent));
+		}
+
+		public int clampedStartPercent() {
+			int end = clampedEndPercent();
+			return Math.max(0, Math.min(end - 1, this.startPercent));
+		}
+
+		private void clamp() {
+			this.horizonFog = clampedHorizonFog();
+			this.fill = clampedFill();
+			this.fogDarkness = clampedFogDarkness();
+			this.startBlocks = clampedStartBlocks();
+			this.endBlocks = clampedEndBlocks();
+			this.endPercent = clampedEndPercent();
+			this.startPercent = clampedStartPercent();
+		}
+	}
+
+	public static final class Swimming {
+		public boolean customDistance = true;
+		public float fadeSeconds = 1.0F;
+		public float brightUntil = 10.0F;
+		public float darkAt = 64.0F;
+		public float kelpForest = 36.0F;
+		public float cold = 40.0F;
+		public float temperate = 44.0F;
+		public float iceOpenings = 48.0F;
+		public float lukewarm = 50.0F;
+		public float deepBasin = 52.0F;
+		public float warm = 56.0F;
+		public float lagoon = 60.0F;
+		public float openOcean = 60.0F;
+		public float otherWater = 34.0F;
+
+		public float clampedFadeSeconds() {
+			return Math.max(0.0F, Math.min(5.0F, this.fadeSeconds));
+		}
+
+		public float clampedBrightUntil() {
+			return Math.max(0.0F, Math.min(256.0F, Math.round(this.brightUntil)));
+		}
+
+		public float clampedDarkAt() {
+			float start = clampedBrightUntil();
+			return Math.max(start + 1.0F, Math.min(256.0F, Math.round(this.darkAt)));
+		}
+
+		public float clampedOtherWater() {
+			return clampSwimFog(this.otherWater);
+		}
+
+		/** Swim fog end for the biome at the camera. Unknown water uses {@link #otherWater}. */
+		public float endFor(Holder<Biome> biome) {
+			if (biome == null) {
+				return clampedOtherWater();
+			}
+			if (biome.is(EcologyBiomes.KELP_FOREST)) {
+				return clampSwimFog(this.kelpForest);
+			}
+			if (biome.is(EcologyBiomes.ICE_EDGE) || biome.is(EcologyBiomes.POLYNYA)) {
+				return clampSwimFog(this.iceOpenings);
+			}
+			if (biome.is(EcologyBiomes.SYMPAGIC_ZONE)
+				|| biome.is(EcologyBiomes.COLD_EELGRASS)
+				|| biome.is(Biomes.FROZEN_OCEAN)
+				|| biome.is(Biomes.COLD_OCEAN)) {
+				return clampSwimFog(this.cold);
+			}
+			if (biome.is(EcologyBiomes.SEAGRASS_MEADOW)
+				|| biome.is(EcologyBiomes.TEMPERATE_ROCKY_REEF)
+				|| biome.is(EcologyBiomes.SAND_WAVE_FIELD)
+				|| biome.is(Biomes.OCEAN)) {
+				return clampSwimFog(this.temperate);
+			}
+			if (biome.is(EcologyBiomes.SUBTROPICAL_SEAGRASS)
+				|| biome.is(EcologyBiomes.PATCH_REEF)
+				|| biome.is(EcologyBiomes.SOFT_CORAL_GARDEN)
+				|| biome.is(Biomes.LUKEWARM_OCEAN)) {
+				return clampSwimFog(this.lukewarm);
+			}
+			if (biome.is(EcologyBiomes.DEEP_BASIN)
+				|| biome.is(Biomes.DEEP_FROZEN_OCEAN)
+				|| biome.is(Biomes.DEEP_COLD_OCEAN)
+				|| biome.is(Biomes.DEEP_OCEAN)
+				|| biome.is(Biomes.DEEP_LUKEWARM_OCEAN)) {
+				return clampSwimFog(this.deepBasin);
+			}
+			if (biome.is(EcologyBiomes.CORAL_REEF)
+				|| biome.is(EcologyBiomes.TROPICAL_SEAGRASS)
+				|| biome.is(Biomes.WARM_OCEAN)) {
+				return clampSwimFog(this.warm);
+			}
+			if (biome.is(EcologyBiomes.LAGOON)) {
+				return clampSwimFog(this.lagoon);
+			}
+			if (biome.is(EcologyBiomes.OPEN_OCEAN)) {
+				return clampSwimFog(this.openOcean);
+			}
+			return clampedOtherWater();
+		}
+
+		/** Push saved region tables forward when they still match an older default set. */
+		private void migrateOldDistanceTables() {
+			boolean firstTable = Math.round(this.kelpForest) == 16
+				&& Math.round(this.cold) == 20
+				&& Math.round(this.temperate) == 24
+				&& Math.round(this.iceOpenings) == 28
+				&& Math.round(this.lukewarm) == 30
+				&& Math.round(this.deepBasin) == 32
+				&& Math.round(this.warm) == 36
+				&& Math.round(this.lagoon) == 40;
+			boolean secondTable = Math.round(this.kelpForest) == 26
+				&& Math.round(this.cold) == 30
+				&& Math.round(this.temperate) == 34
+				&& Math.round(this.iceOpenings) == 38
+				&& Math.round(this.lukewarm) == 40
+				&& Math.round(this.deepBasin) == 42
+				&& Math.round(this.warm) == 46
+				&& Math.round(this.lagoon) == 50;
+			if (firstTable || secondTable) {
+				this.kelpForest = 36.0F;
+				this.cold = 40.0F;
+				this.temperate = 44.0F;
+				this.iceOpenings = 48.0F;
+				this.lukewarm = 50.0F;
+				this.deepBasin = 52.0F;
+				this.warm = 56.0F;
+				this.lagoon = 60.0F;
+			}
+			if (Math.round(this.openOcean) == 50) {
+				this.openOcean = 60.0F;
+			}
+			if (Math.round(this.otherWater) == 24) {
+				this.otherWater = 34.0F;
+			}
+		}
+
+		private void clamp() {
+			this.fadeSeconds = clampedFadeSeconds();
+			this.brightUntil = clampedBrightUntil();
+			this.darkAt = clampedDarkAt();
+			this.kelpForest = clampSwimFog(this.kelpForest);
+			this.cold = clampSwimFog(this.cold);
+			this.temperate = clampSwimFog(this.temperate);
+			this.iceOpenings = clampSwimFog(this.iceOpenings);
+			this.lukewarm = clampSwimFog(this.lukewarm);
+			this.deepBasin = clampSwimFog(this.deepBasin);
+			this.warm = clampSwimFog(this.warm);
+			this.lagoon = clampSwimFog(this.lagoon);
+			this.openOcean = clampSwimFog(this.openOcean);
+			this.otherWater = clampSwimFog(this.otherWater);
+		}
+	}
+
+	public static final class OpaqueWater {
+		public boolean distance = true;
+		public float strength = 1.0F;
+		public float start = 0.0F;
+		public float end = 0.5F;
+		public boolean angle = true;
+		public float angleStrength = 1.0F;
+		public float angleCurve = 0.75F;
+
+		public float clampedStrength() {
+			return clamp01(this.strength);
+		}
+
+		public float clampedStart() {
+			return clamp01(this.start);
+		}
+
+		public float clampedEnd() {
+			return Math.max(clampedStart(), clamp01(this.end));
+		}
+
+		public float clampedAngleStrength() {
+			return clamp01(this.angleStrength);
+		}
+
+		public float clampedAngleCurve() {
+			return Math.max(0.25F, Math.min(8.0F, this.angleCurve));
+		}
+
+		private void clamp() {
+			this.strength = clampedStrength();
+			this.start = clampedStart();
+			this.end = clampedEnd();
+			this.angleStrength = clampedAngleStrength();
+			this.angleCurve = clampedAngleCurve();
+		}
+	}
+
+	public static final class Debug {
+		public boolean logging = false;
+		public boolean highlightTranslucent = false;
+		public boolean highlightSeeThrough = false;
+		public boolean highlightMarkedWater = false;
+		public boolean highlightAngle = false;
 	}
 }

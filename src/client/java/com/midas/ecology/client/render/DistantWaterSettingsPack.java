@@ -124,7 +124,7 @@ public final class DistantWaterSettingsPack {
 			writeSodiumOverlay(sodiumOverlay);
 		} catch (IOException e) {
 			EcologyMod.LOGGER.error("[Ecology DistantWater] Failed to write settings pack", e);
-			EcologyClientConfig.notifyPlayer("Ecology: failed to write shader settings pack (see log)");
+			EcologyClientConfig.notifyPlayer(Component.translatable("ecology.config.chat.pack_failed"));
 		}
 	}
 

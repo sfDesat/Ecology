@@ -16,7 +16,7 @@ import net.minecraft.world.level.biome.Climate;
  *
  * <p>Bands align with {@code ecology:ocean_depth_control}:
  * <pre>
- *   COAST   [-0.235, -0.19]  (coastal shallows temporarily disabled)
+ *   SHORE   [-0.235, -0.19]  parent ocean next to land
  *   INNER   [-0.28, -0.235]  seagrass / lagoon
  *   MID     [-0.40, -0.28]   sand waves, kelp, reefs
  *   OUTER   [SHELF_EDGE, -0.40] soft coral / ice fringe
@@ -33,10 +33,7 @@ public final class HabitatPocketTable {
 	 */
 	public static final float SHELF_EDGE = -0.48f;
 
-	/**
-	 * Parent/generic ocean fill across the whole shallow shelf.
-	 * Includes the former COAST strip while coastal shallows are disabled.
-	 */
+	/** Parent/generic ocean fill across the whole shallow shelf, including the nearshore strip. */
 	public static final Climate.Parameter PARENT_SHELF_CONTINENTALNESS = Climate.Parameter.span(SHELF_EDGE, -0.19f);
 
 	/**
@@ -46,15 +43,7 @@ public final class HabitatPocketTable {
 	public static final Climate.Parameter PARENT_WEIRDNESS = Climate.Parameter.span(-1.0f, -0.08f);
 	public static final Climate.Parameter POCKET_WEIRDNESS = Climate.Parameter.span(-0.08f, 1.0f);
 
-	/** Full weirdness — reserved for the continuous coastal strip when re-enabled. */
-	public static final Climate.Parameter FULL_WEIRDNESS = Climate.Parameter.span(-1.0f, 1.0f);
-
-	/**
-	 * Thin underwater strip next to land / beach.
-	 * Coastal shallows placements are temporarily omitted from {@link #PLACEMENTS_BY_PARENT}.
-	 */
-	public static final Climate.Parameter COAST = Climate.Parameter.span(-0.235f, -0.19f);
-	/** Seagrass / sheltered lagoon band just seaward of the surf strip. */
+	/** Seagrass / sheltered lagoon band just seaward of the nearshore parent strip. */
 	public static final Climate.Parameter INNER = Climate.Parameter.span(-0.28f, -0.235f);
 	/** Mid-shelf sand flats, kelp, and reefs. */
 	public static final Climate.Parameter MID = Climate.Parameter.span(-0.40f, -0.28f);
@@ -68,7 +57,7 @@ public final class HabitatPocketTable {
 	private static final Climate.Parameter FROZEN_POLYNYA_WEIRDNESS = Climate.Parameter.span(0.54f, 0.76f);
 	private static final Climate.Parameter FROZEN_FILL_WEIRDNESS_B = Climate.Parameter.span(0.76f, 1.0f);
 
-	/** Sheltered lagoon — shoreward half of INNER (not the surf COAST strip). */
+	/** Sheltered lagoon — shoreward half of INNER. */
 	private static final Climate.Parameter WARM_LAGOON = Climate.Parameter.span(-0.255f, -0.235f);
 	private static final Climate.Parameter WARM_SEAGRASS = Climate.Parameter.span(-0.28f, -0.255f);
 	private static final Climate.Parameter WARM_CORAL = Climate.Parameter.span(-0.36f, -0.28f);
@@ -83,7 +72,6 @@ public final class HabitatPocketTable {
 		Biomes.FROZEN_OCEAN,
 		List.of(
 			placement(Biomes.FROZEN_OCEAN, PARENT_SHELF_CONTINENTALNESS, PARENT_WEIRDNESS),
-			// TEMP: coastal shallows disabled — placement(EcologyBiomes.FROZEN_COASTAL_SHALLOWS, COAST, FULL_WEIRDNESS),
 			placement(Biomes.FROZEN_OCEAN, FROZEN_INNER_MID, FROZEN_FILL_WEIRDNESS_A),
 			placement(Biomes.FROZEN_OCEAN, FROZEN_INNER_MID, FROZEN_FILL_WEIRDNESS_B),
 			placement(EcologyBiomes.ICE_EDGE, OUTER, POCKET_WEIRDNESS),
@@ -94,14 +82,12 @@ public final class HabitatPocketTable {
 		Biomes.COLD_OCEAN,
 		List.of(
 			placement(Biomes.COLD_OCEAN, PARENT_SHELF_CONTINENTALNESS, PARENT_WEIRDNESS),
-			// TEMP: coastal shallows disabled — placement(EcologyBiomes.COLD_COASTAL_SHALLOWS, COAST, FULL_WEIRDNESS),
 			placement(EcologyBiomes.COLD_EELGRASS, INNER, POCKET_WEIRDNESS),
 			placement(EcologyBiomes.KELP_FOREST, MID, POCKET_WEIRDNESS)
 		),
 		Biomes.OCEAN,
 		List.of(
 			placement(Biomes.OCEAN, PARENT_SHELF_CONTINENTALNESS, PARENT_WEIRDNESS),
-			// TEMP: coastal shallows disabled — placement(EcologyBiomes.TEMPERATE_COASTAL_SHALLOWS, COAST, FULL_WEIRDNESS),
 			placement(EcologyBiomes.SEAGRASS_MEADOW, INNER, POCKET_WEIRDNESS),
 			placement(EcologyBiomes.SAND_WAVE_FIELD, TEMPERATE_SAND, POCKET_WEIRDNESS),
 			placement(EcologyBiomes.TEMPERATE_ROCKY_REEF, TEMPERATE_REEF, POCKET_WEIRDNESS)
@@ -109,7 +95,6 @@ public final class HabitatPocketTable {
 		Biomes.LUKEWARM_OCEAN,
 		List.of(
 			placement(Biomes.LUKEWARM_OCEAN, PARENT_SHELF_CONTINENTALNESS, PARENT_WEIRDNESS),
-			// TEMP: coastal shallows disabled — placement(EcologyBiomes.LUKEWARM_COASTAL_SHALLOWS, COAST, FULL_WEIRDNESS),
 			placement(EcologyBiomes.SUBTROPICAL_SEAGRASS, LUKE_SEAGRASS, POCKET_WEIRDNESS),
 			placement(EcologyBiomes.PATCH_REEF, LUKE_PATCH, POCKET_WEIRDNESS),
 			placement(EcologyBiomes.SOFT_CORAL_GARDEN, LUKE_SOFT, POCKET_WEIRDNESS)
@@ -117,7 +102,6 @@ public final class HabitatPocketTable {
 		Biomes.WARM_OCEAN,
 		List.of(
 			placement(Biomes.WARM_OCEAN, PARENT_SHELF_CONTINENTALNESS, PARENT_WEIRDNESS),
-			// TEMP: coastal shallows disabled — placement(EcologyBiomes.TROPICAL_COASTAL_SHALLOWS, COAST, FULL_WEIRDNESS),
 			placement(EcologyBiomes.LAGOON, WARM_LAGOON, POCKET_WEIRDNESS),
 			placement(EcologyBiomes.TROPICAL_SEAGRASS, WARM_SEAGRASS, POCKET_WEIRDNESS),
 			placement(EcologyBiomes.CORAL_REEF, WARM_CORAL, POCKET_WEIRDNESS)

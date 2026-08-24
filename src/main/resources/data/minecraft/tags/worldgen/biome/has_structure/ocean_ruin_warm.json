@@ -4,10 +4,8 @@
 		"ecology:subtropical_seagrass",
 		"ecology:patch_reef",
 		"ecology:soft_coral_garden",
-		"ecology:lukewarm_coastal_shallows",
 		"ecology:coral_reef",
 		"ecology:lagoon",
-		"ecology:tropical_seagrass",
-		"ecology:tropical_coastal_shallows"
+		"ecology:tropical_seagrass"
 	]
 }

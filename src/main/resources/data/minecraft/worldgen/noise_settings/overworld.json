@@ -1000,8 +1000,7 @@
                           "minecraft:deep_frozen_ocean",
                           "ecology:ice_edge",
                           "ecology:polynya",
-                          "ecology:sympagic_zone",
-                          "ecology:frozen_coastal_shallows"
+                          "ecology:sympagic_zone"
                         ]
                       },
                       "then_run": {
@@ -1397,11 +1396,6 @@
                                   "minecraft:warm_ocean",
                                   "minecraft:beach",
                                   "minecraft:snowy_beach",
-                                  "ecology:frozen_coastal_shallows",
-                                  "ecology:cold_coastal_shallows",
-                                  "ecology:temperate_coastal_shallows",
-                                  "ecology:lukewarm_coastal_shallows",
-                                  "ecology:tropical_coastal_shallows",
                                   "ecology:sand_wave_field",
                                   "ecology:lagoon",
                                   "ecology:seagrass_meadow",
@@ -1894,8 +1888,7 @@
                           "minecraft:deep_frozen_ocean",
                           "ecology:ice_edge",
                           "ecology:polynya",
-                          "ecology:sympagic_zone",
-                          "ecology:frozen_coastal_shallows"
+                          "ecology:sympagic_zone"
                         ]
                       },
                       "then_run": {
@@ -2234,11 +2227,6 @@
                                   "minecraft:warm_ocean",
                                   "minecraft:beach",
                                   "minecraft:snowy_beach",
-                                  "ecology:frozen_coastal_shallows",
-                                  "ecology:cold_coastal_shallows",
-                                  "ecology:temperate_coastal_shallows",
-                                  "ecology:lukewarm_coastal_shallows",
-                                  "ecology:tropical_coastal_shallows",
                                   "ecology:sand_wave_field",
                                   "ecology:lagoon",
                                   "ecology:seagrass_meadow",
@@ -2555,11 +2543,6 @@
                         "minecraft:warm_ocean",
                         "minecraft:beach",
                         "minecraft:snowy_beach",
-                        "ecology:frozen_coastal_shallows",
-                        "ecology:cold_coastal_shallows",
-                        "ecology:temperate_coastal_shallows",
-                        "ecology:lukewarm_coastal_shallows",
-                        "ecology:tropical_coastal_shallows",
                         "ecology:sand_wave_field",
                         "ecology:lagoon",
                         "ecology:seagrass_meadow",
@@ -2631,11 +2614,6 @@
                     "if_true": {
                       "type": "minecraft:biome",
                       "biome_is": [
-                        "ecology:frozen_coastal_shallows",
-                        "ecology:cold_coastal_shallows",
-                        "ecology:temperate_coastal_shallows",
-                        "ecology:lukewarm_coastal_shallows",
-                        "ecology:tropical_coastal_shallows",
                         "ecology:sand_wave_field",
                         "ecology:lagoon",
                         "ecology:seagrass_meadow",
@@ -2741,11 +2719,6 @@
                         "minecraft:warm_ocean",
                         "minecraft:lukewarm_ocean",
                         "minecraft:deep_lukewarm_ocean",
-                        "ecology:frozen_coastal_shallows",
-                        "ecology:cold_coastal_shallows",
-                        "ecology:temperate_coastal_shallows",
-                        "ecology:lukewarm_coastal_shallows",
-                        "ecology:tropical_coastal_shallows",
                         "ecology:sand_wave_field",
                         "ecology:lagoon",
                         "ecology:seagrass_meadow",

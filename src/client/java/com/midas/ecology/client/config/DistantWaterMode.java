@@ -1,34 +1,35 @@
 package com.midas.ecology.client.config;
 
+import com.google.gson.annotations.SerializedName;
+import net.minecraft.network.chat.Component;
+
 /**
  * Selectable distant-water fix. Modes are mutually exclusive in the shader.
- * <p>
- * Display names are for the config UI; JSON still uses the enum constant names.
+ * JSON uses the {@link SerializedName} values ({@code off}, {@code opaque}, {@code fog_tint}).
  */
 public enum DistantWaterMode {
-	/** Vanilla water; Ecology distant-water effects off (swim fog/brightness unchanged). */
-	OFF("Off (vanilla)"),
-	/** Distance + fresnel alpha boost on marked water faces. */
-	OPACITY("Opaque water"),
-	/**
-	 * Unfog air fog behind water, then apply a fixed underwater sight fog toward water fog color.
-	 * Surface fog on the water mesh stays white. Needs Fabulous / Improved Transparency.
-	 */
-	FOG_REMAP("Fog tint");
+	@SerializedName("off")
+	OFF,
+	@SerializedName("opaque")
+	OPACITY,
+	@SerializedName("fog_tint")
+	FOG_REMAP;
 
-	private final String label;
-
-	DistantWaterMode(String label) {
-		this.label = label;
+	public Component displayName() {
+		return Component.translatable("ecology.config.mode." + this.jsonName());
 	}
 
-	public String label() {
-		return this.label;
+	public String jsonName() {
+		return switch (this) {
+			case OFF -> "off";
+			case OPACITY -> "opaque";
+			case FOG_REMAP -> "fog_tint";
+		};
 	}
 
 	@Override
 	public String toString() {
-		return this.label;
+		return this.jsonName();
 	}
 
 	public float shaderValue() {
