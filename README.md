@@ -1,63 +1,29 @@
 # Ecology
 
-Fabric mod for Minecraft **26.2** focused on **ocean worldgen**: habitat pocket biomes on shallow shelves, Open/Deep pelagic stacking in basins, custom seafloor features, and continent-driven shelf depths.
+Fabric mod for Minecraft **26.2**. Adds ocean habitat pockets, pelagic biome layers, seafloor features, and client water rendering.
 
-Mob ecology and new creatures are planned later; this repo currently ships the ocean climate and terrain foundation.
+New mobs are not in this build. Vanilla ocean fauna is placed by habitat (including larger schools and underwater turtle grazing).
+
+## Requirements
+
+- Minecraft **26.2**, Java **25**, Fabric Loader **0.19.3+**, Fabric API
+- License: [CC0-1.0](LICENSE)
+
+**Optional:** Mod Menu + Cloth Config (settings screen), Sodium (shader overlay, temporary for testing). Distant-water **fog tint** needs Fabulous / Improved Transparency. Effects pause while an Iris pack is running (configurable).
+
+## Worldgen
+
+Fourteen **habitat pockets** on shallow shelves, nested in vanilla ocean climate (frozen through warm): Ice Edge, Polynya, Sympagic Zone, Kelp Forest, Cold Eelgrass, Seagrass Meadow, Sand Wave Field, Temperate Rocky Reef, Subtropical Seagrass, Patch Reef, Soft Coral Garden, Coral Reef, Lagoon, Tropical Seagrass.
+
+Basins stack **Open Ocean** over **Deep Basin**. Custom features include reefs, rocks, seafloor fans, icebergs, and patch-reef islands. Shelf depth follows continents.
+
+## Client
+
+Config: `config/ecology-client.json`, or Mod Menu if Cloth Config is installed.
+
+- **Fog tint** / **Opaque** / **Off** for distant water
+- Per-biome underwater fog distance and overhead-light falloff
 
 ## Setup
 
-- JDK **25**
-- Import the project in your IDE and run the `genSources` / `runClient` Gradle tasks
-
-## Dev dependencies
-
-Mod Menu, Cloth Config, and Sodium are included as **local runtime** deps for testing. They are not hard requirements of the published mod.
-
-## Client: distant water
-
-Deep oceans show a pale **basin outline** when looking from above: water with nothing behind it shows air fog/sky, while the seafloor does not. See [`WATER_FOG_OUTLINE.md`](WATER_FOG_OUTLINE.md).
-
-Ecology offers two **mutually exclusive** fixes (`core/terrain` + Fog UBO extension + Fabulous `post/transparency` for Fog tint):
-
-| Mode | UI name | Behavior |
-|------|---------|----------|
-| `OFF` | Off (vanilla) | Vanilla water meshes and Sodium shaders. Swim fog/brightness stay on their own toggles. |
-| `OPACITY` | Opaque water | Raise marked water-face alpha with distance + optional fresnel |
-| `FOG_REMAP` | Fog tint | Replace pale fog/sky *behind water only* with water fog (Fabulous); white fog on top of water unchanged |
-
-### Config UI
-
-- **Mod Menu → Ecology → Config** (requires Mod Menu + Cloth Config; both are on the `runClient` classpath)
-- JSON fallback: `config/ecology-client.json`
-
-| Key | Default | Meaning |
-|-----|---------|---------|
-| `distantWaterMode` | `FOG_REMAP` | `OFF` / `OPACITY` / `FOG_REMAP` |
-| `fogRemapBiasStrength` | `1.0` | Fog tint: water fill strength (behind-water fog/sky replacement) |
-| `fogTintDarkness` | `0.55` | Fog tint: darkens water fog used *behind* water (`0` = biome color, `1` = black) |
-| `sightFogStart` | `16` | Fog tint: behind-water fill start in blocks (when not using %) |
-| `sightFogEnd` | `128` | Fog tint: behind-water fill end in blocks |
-| `sightFogUseRenderDistancePercent` | `true` | Fog tint: scale sight start/end with render distance |
-| `distanceOpacityEnabled` | `true` | OPACITY: distance-based opacity (off = fresnel-only) |
-| `distantWaterOpacityStrength` | `1.0` | OPACITY: opacity at End distance (`1.0` = fully opaque) |
-| `distantWaterOpacityStart` | `0.0` | OPACITY: fraction of render-distance fog where boost begins |
-| `distantWaterOpacityEnd` | `0.5` | OPACITY: fraction where opacity reaches full strength (must be ≥ Start) |
-| `fresnelEnabled` | `true` | OPACITY: glancing-angle opacity |
-| `fresnelStrength` | `1.0` | OPACITY: how much angle opacity to add (combined with distance, capped at 1) |
-| `fresnelPower` | `0.75` | OPACITY: `pow(grazing, power)` — lower spreads more, higher = horizon-only |
-| `irisAutoDisable` | `true` | Turn off Ecology distant-water effects while an Iris pack is active |
-| `debugLogging` | `false` | Log diagnostics; print status to chat when config applies |
-| `debugHighlightFresnel` | `false` | Paint marked water green→red by view angle |
-
-- Legacy configs with `waterShaderEnabled: true` (no mode) migrate to `OPACITY`; `underwaterSight*` migrates to `sightFog*`
-- Distant water applies only when the camera is **above water**. Swim fog/brightness are separate and keep their own toggles.
-- Runtime settings overlay: `config/ecology/distant_water_pack/` (written only when settings change)
-- **Sodium**: soft-compat via fluid marker mixin + TOP-pack forks of `sodium:blocks/block_layer_opaque` (pinned to Sodium `mc26.2-0.9.1-fabric`). Overlay is **not** installed while Distant water is Off. Fog tint still needs Fabulous. Iris packs auto-disable unless `irisAutoDisable` is off
-- Fog tint without Fabulous does not encode water alpha (warning only). Switching Off/On rebuilds chunks so water markers are added or stripped.
-- Check the log for `[Ecology DistantWater]` lines if the effect is missing (enable `debugLogging`)
-
-## Design notes
-
-- [`WATER_FOG_OUTLINE.md`](WATER_FOG_OUTLINE.md) — pale basin outline problem and recommended fix
-- [`BIOMES.md`](BIOMES.md) — habitat list and depth targets
-- [`DENSITY.md`](DENSITY.md) — ocean depth spline and vendored offset fork
+Import in an IDE and run `genSources` / `runClient`. Mod Menu, Cloth Config, and Sodium are **local runtime** deps for testing; they are not required to load the published jar.
